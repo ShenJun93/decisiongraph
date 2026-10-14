@@ -1,0 +1,14 @@
+# Dedicated local-only FalkorDB for Graph Hacks 2026; do not prune shared Docker assets.
+services:
+  graph:
+    image: falkordb/falkordb:v4.20.4
+    container_name: gh2026-decisiongraph-falkordb
+    restart: "no"
+    mem_limit: 1536m
+    cpus: 2.0
+    ports:
+      - "127.0.0.1:16379:6379"
+    volumes:
+      - graph_hacks_2026_data:/data
+volumes:
+  graph_hacks_2026_data:

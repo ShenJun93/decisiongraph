@@ -1,0 +1,17 @@
+{
+  "name": "graph-hacks-decisiongraph-2026",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Company Brain: provenance-aware, graph-grounded decision HOLD drafts",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "seed": "node scripts/seed.mjs",
+    "demo": "node scripts/demo.mjs",
+    "start": "node src/server.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "falkordb": "6.8.0"
+  }
+}
