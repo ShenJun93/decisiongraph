@@ -25,7 +25,7 @@ A synthetic Project Orion release question is resolved by querying a FalkorDB kn
 - `(Source {id,rank})-[:ATTESTS]->(OwnershipClaim)`
 - `(OwnershipClaim)-[:NAMES_OWNER]->(Person {id,name})`
 
-The source rank (0..100) and latest effective timestamp jointly select a candidate. Two different owners with equal top rank and timestamp cause `ABSTAIN`. Invalid/missing source fields, future-only claims, multiple services and disconnected/unavailable FalkorDB also abstain. At the bounded query limit of 50 returned rows, provenance may be truncated, so the result fails closed as `EVIDENCE_RESULT_LIMIT`.
+The source rank (0..100) and latest effective timestamp jointly select a candidate. Two different owners with equal top rank and timestamp cause `ABSTAIN`. Invalid/missing source fields, future-only claims, multiple services and disconnected/unavailable FalkorDB also abstain. The query uses FalkorDB `OPTIONAL MATCH` so incomplete ownership claims and services remain visible as null provenance rows and trigger `ABSTAIN`; mandatory inner joins must not silently hide a conflicting claim. Equally authoritative timestamps are compared by UTC instant (different offsets cannot bypass the tie rule). At the bounded query limit of 50 returned rows, provenance may be truncated, so the result fails closed as `EVIDENCE_RESULT_LIMIT`.
 
 ## Key parameterized Cypher query
 ```cypher

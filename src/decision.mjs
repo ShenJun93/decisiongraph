@@ -1,11 +1,13 @@
 // Graph-first, fail-closed human-review draft. Pure selection logic is separately tested.
 // A deterministic decision workflow is NOT advertised as an LLM agent.
 export const MAX_EVIDENCE_ROWS = 50;
+// Preserve every service and ownership claim in the query, including rows with
+// missing owners/sources. Silent inner joins can hide contradictory evidence.
 export const LOOKUP_CYPHER = `
 MATCH (project:Project {id: $projectId})-[:USES]->(service:Service)
-MATCH (claim:OwnershipClaim)-[:ABOUT]->(service)
-MATCH (source:Source)-[:ATTESTS]->(claim)
-MATCH (claim)-[:NAMES_OWNER]->(owner:Person)
+OPTIONAL MATCH (claim:OwnershipClaim)-[:ABOUT]->(service)
+OPTIONAL MATCH (source:Source)-[:ATTESTS]->(claim)
+OPTIONAL MATCH (claim)-[:NAMES_OWNER]->(owner:Person)
 RETURN project.id AS projectId, service.id AS serviceId,
        claim.id AS claimId, claim.effectiveAt AS effectiveAt,
        source.id AS sourceId, source.rank AS sourceRank,
@@ -64,8 +66,11 @@ export function resolveEvidence(rows, {projectId = "orion", asOf = "2026-10-14T2
       Date.parse(b.effectiveAt) - Date.parse(a.effectiveAt) ||
       a.claimId.localeCompare(b.claimId));
   const winner = normalized[0];
+  // Different valid timezone offsets can represent the same instant.
+  // Compare parsed instants, not raw timestamp strings, for authority ties.
+  const winnerMs = Date.parse(winner.effectiveAt);
   const coequal = normalized.filter(r =>
-    r.sourceRank === winner.sourceRank && r.effectiveAt === winner.effectiveAt);
+    r.sourceRank === winner.sourceRank && Date.parse(r.effectiveAt) === winnerMs);
   if (new Set(coequal.map(r => r.ownerId)).size > 1) {
     return abstain(projectId, asOf, "UNRESOLVED_EQUAL_AUTHORITY_CONFLICT", {
       competing: coequal.map(r => ({
