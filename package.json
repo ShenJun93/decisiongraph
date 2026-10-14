@@ -9,7 +9,8 @@
     "seed": "node scripts/seed.mjs",
     "demo": "node scripts/demo.mjs",
     "start": "node src/server.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "agent:demo": "node scripts/agent-demo.mjs"
   },
   "dependencies": {
     "falkordb": "6.8.0"

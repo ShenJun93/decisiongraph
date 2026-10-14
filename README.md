@@ -3,7 +3,7 @@
 **Track candidate:** Company Brain (Track 03). Started after the official October 15, 2026 01:31 ICT opening. **Work in progress: not a submitted or prize-ready agent.**
 
 ## Scope and safety
-A synthetic Project Orion release question is resolved by querying a FalkorDB knowledge graph. Three provenance-tagged ownership claims disagree. The policy considers source authority, effective time and equal-rank collisions, then returns either a traceable **human-review draft** or **ABSTAIN**. No payments, real releases, messages, approvals or external side effects are executed. No personal or restricted data is used. The current deterministic graph workflow is **not yet a genuine LLM tool-calling agent**.
+A synthetic Project Orion release question is resolved by querying a FalkorDB knowledge graph. Three provenance-tagged ownership claims disagree. The policy considers source authority, effective time and equal-rank collisions, then returns either a traceable **human-review draft** or **ABSTAIN**. No payments, real releases, messages, approvals or external side effects are executed. No personal or restricted data is used. The deterministic graph workflow is now accompanied by a restricted **LLM-driven tool-call orchestration adapter**. Unit tests use a stub model; until a legally licensed local model and FalkorDB both run for a real end-to-end attempt, **genuine LLM+FalkorDB operation is NOT YET VERIFIED**.
 
 ## Run locally (Node >= 24, Docker Desktop with a healthy Linux daemon)
 1. Confirm free disk and Docker memory first. This project does not manage or prune other projects' containers or volumes.
