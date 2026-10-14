@@ -79,6 +79,24 @@ test("model runtime cannot route requests to paid/remote endpoints",()=>{
   assert.equal(localModelConfig({LOCAL_LLM_URL:"http://127.0.0.1:18080/v1/chat/completions",LOCAL_LLM_MODEL:"verified-licensed-model"}).model,"verified-licensed-model");
 });
 
+test("direct model-adapter config cannot bypass localhost-only enforcement",()=>{
+  let requests=0;
+  const spy=async()=>{requests++;throw new Error("must not execute");};
+  for(const endpoint of [
+    "https://api.openai.com/v1/chat/completions",
+    "http://127.0.0.1.evil.invalid:18080/v1/chat/completions",
+    "http://192.168.1.20:18080/v1/chat/completions",
+    "http://127.0.0.1:18080/v1/chat/completions?redirect=1"
+  ]) {
+    assert.throws(()=>createLocalModel({endpoint,model:"license-verified"},spy),
+      /Loopback-only/);
+  }
+  assert.throws(()=>createLocalModel({
+    endpoint:"http://127.0.0.1:18080/v1/chat/completions",model:""
+  },spy),/LOCAL_LLM_MODEL/);
+  assert.equal(requests,0);
+});
+
 test("local adapter issues a one-call tools payload without key or external actions",async()=>{
   let hits=0;
   const stub=async(url,options)=>{
