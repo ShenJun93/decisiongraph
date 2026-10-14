@@ -51,6 +51,14 @@ test("empty graph, invalid graph response and future-dated data all abstain",()=
   const future = row({effectiveAt:"2026-11-01T00:00:00.000Z"});
   assert.equal(resolveEvidence([future],{projectId,asOf}).reason,"NO_CURRENT_EVIDENCE");
 });
+test("truncated graph evidence refuses an authoritative answer",()=>{
+  const rows=Array.from({length:50},(_,i)=>row({claimId:"claim-"+i}));
+  const r=resolveEvidence(rows,{projectId,asOf});
+  assert.equal(r.status,"ABSTAIN");
+  assert.equal(r.reason,"EVIDENCE_RESULT_LIMIT");
+  assert.equal(r.currentOwner,undefined);
+});
+
 test("multi-service output not squashed into one owner",()=>{
   const r=resolveEvidence([row(),row({serviceId:"audit-system",claimId:"other"})],{projectId,asOf});
   assert.equal(r.reason,"AMBIGUOUS_PROJECT_SERVICE");

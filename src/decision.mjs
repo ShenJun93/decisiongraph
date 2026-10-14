@@ -1,5 +1,6 @@
 // Graph-first, fail-closed human-review draft. Pure selection logic is separately tested.
 // A deterministic decision workflow is NOT advertised as an LLM agent.
+export const MAX_EVIDENCE_ROWS = 50;
 export const LOOKUP_CYPHER = `
 MATCH (project:Project {id: $projectId})-[:USES]->(service:Service)
 MATCH (claim:OwnershipClaim)-[:ABOUT]->(service)
@@ -34,6 +35,9 @@ export function resolveEvidence(rows, {projectId = "orion", asOf = "2026-10-14T2
   if (!validId(projectId) || !validTime(asOf)) return abstain(projectId, asOf, "INVALID_INPUT");
   if (!Array.isArray(rows)) return abstain(projectId, asOf, "INVALID_GRAPH_RESPONSE");
   if (!rows.length) return abstain(projectId, asOf, "NO_GRAPH_EVIDENCE");
+  // The Cypher result is capped. At the cap we cannot prove an equal-authority
+  // conflicting claim was not omitted: fail closed instead of picking a winner.
+  if (rows.length >= MAX_EVIDENCE_ROWS) return abstain(projectId, asOf, "EVIDENCE_RESULT_LIMIT");
   const atMs = Date.parse(asOf);
   const normalized = [];
   for (const r of rows) {

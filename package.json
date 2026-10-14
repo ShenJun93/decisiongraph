@@ -10,7 +10,8 @@
     "demo": "node scripts/demo.mjs",
     "start": "node src/server.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "agent:demo": "node scripts/agent-demo.mjs"
+    "agent:demo": "node scripts/agent-demo.mjs",
+    "graph:counterfactual": "node scripts/counterfactual-acceptance.mjs"
   },
   "dependencies": {
     "falkordb": "6.8.0"

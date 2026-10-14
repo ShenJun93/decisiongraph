@@ -12,8 +12,10 @@ A synthetic Project Orion release question is resolved by querying a FalkorDB kn
 4. `node scripts/smoke.mjs` — actual FalkorDB write and read of a unique probe node.
 5. `node scripts/seed.mjs` — idempotently create synthetic graph fixture.
 6. `node src/server.mjs`, open `http://127.0.0.1:18737`; POST `/api/decision` with `{"projectId":"orion"}`.
-7. `node --test tests/decision.test.mjs` — policy/negative unit tests; these do not require a live database.
-8. `docker compose stop graph` when finished; do not delete other Docker data.
+7. `npm test` — offline unit and negative tests (22 PASS on Oct 15); these use simulated graph/model calls, NOT live DB evidence.
+8. `node scripts/counterfactual-acceptance.mjs` **only after FalkorDB is healthy** — in separate graph `gh2026_companybrain_acceptance`, verify live baseline owner, mutate one synthetic ownership link, confirm answer changes, force a same-rank conflict and require ABSTAIN, then restore test edges even on error. A mock-backed test for this protocol passed, actual live query still BLOCKED by Docker.
+9. `node scripts/agent-demo.mjs` **only after a lawful tool-calling model on loopback and FalkorDB are both available**; does not silently use a paid/cloud API or unlicensed model. Genuine LLM model call remains UNVERIFIED.
+10. `docker compose stop graph` when finished; do not delete other Docker data.
 
 **Environment:** optional `GRAPH_HOST=127.0.0.1`, `GRAPH_PORT=16379`, `GRAPH_NAME=gh2026_companybrain_owner`, `APP_PORT=18737`. Only localhost is accepted for graph and web ports.
 
@@ -23,7 +25,7 @@ A synthetic Project Orion release question is resolved by querying a FalkorDB kn
 - `(Source {id,rank})-[:ATTESTS]->(OwnershipClaim)`
 - `(OwnershipClaim)-[:NAMES_OWNER]->(Person {id,name})`
 
-The source rank (0..100) and latest effective timestamp jointly select a candidate. Two different owners with equal top rank and timestamp cause `ABSTAIN`. Invalid/missing source fields, future-only claims, multiple services and disconnected/unavailable FalkorDB also abstain.
+The source rank (0..100) and latest effective timestamp jointly select a candidate. Two different owners with equal top rank and timestamp cause `ABSTAIN`. Invalid/missing source fields, future-only claims, multiple services and disconnected/unavailable FalkorDB also abstain. At the bounded query limit of 50 returned rows, provenance may be truncated, so the result fails closed as `EVIDENCE_RESULT_LIMIT`.
 
 ## Key parameterized Cypher query
 ```cypher
