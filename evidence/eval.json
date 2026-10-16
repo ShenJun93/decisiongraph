@@ -1,0 +1,157 @@
+{
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "extractedAt": "2026-10-16T13:27:05.199Z",
+ "ownership": {
+  "found": 17,
+  "expected": 17,
+  "correct": 17,
+  "precision": 1,
+  "recall": 1,
+  "missed": [],
+  "spurious": []
+ },
+ "decisions": {
+  "found": 4,
+  "expected": 4,
+  "correct": 4,
+  "precision": 1,
+  "recall": 1,
+  "missed": [],
+  "spurious": []
+ },
+ "rejectedByChecks": [
+  {
+   "sourceId": "msg-006",
+   "type": "decision",
+   "reason": "DECISION_NOT_FROM_ADR"
+  },
+  {
+   "sourceId": "msg-007",
+   "type": "decision",
+   "reason": "DECISION_NOT_FROM_ADR"
+  },
+  {
+   "sourceId": "msg-037",
+   "type": "decision",
+   "reason": "DECISION_NOT_FROM_ADR"
+  }
+ ],
+ "answers": {
+  "correct": 14,
+  "total": 14,
+  "rows": [
+   {
+    "serviceId": "billing-gateway",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "ben",
+    "got": "ben",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "billing-gateway",
+    "asOf": "2026-09-25T00:00:00Z",
+    "expected": "aria",
+    "got": "aria",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "ml-pipeline",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "cora",
+    "got": "cora",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "feature-store",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "jun",
+    "got": "jun",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "payments-api",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "ABSTAIN",
+    "got": "ABSTAIN",
+    "reason": "UNRESOLVED_EQUAL_AUTHORITY_CONFLICT",
+    "ok": true
+   },
+   {
+    "serviceId": "search-index",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "ABSTAIN",
+    "got": "ABSTAIN",
+    "reason": "LOW_AUTHORITY_ONLY",
+    "ok": true
+   },
+   {
+    "serviceId": "checkout-web",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "kai",
+    "got": "kai",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "ledger-service",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "omar",
+    "got": "omar",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "notification-service",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "pia",
+    "got": "pia",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "identity-service",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "uma",
+    "got": "uma",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "event-bus",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "vik",
+    "got": "vik",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "analytics-warehouse",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "lena",
+    "got": "lena",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "serviceId": "mobile-app",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "ABSTAIN",
+    "got": "ABSTAIN",
+    "reason": "NO_GRAPH_EVIDENCE",
+    "ok": true
+   },
+   {
+    "serviceId": "infra-k8s",
+    "asOf": "2026-10-16T12:00:00Z",
+    "expected": "gus",
+    "got": "gus",
+    "reason": null,
+    "ok": true
+   }
+  ]
+ }
+}

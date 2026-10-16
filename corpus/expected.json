@@ -1,0 +1,224 @@
+{
+  "ownership": [
+    {
+      "sourceId": "service-directory-2026-09",
+      "serviceId": "billing-gateway",
+      "ownerId": "aria",
+      "effectiveAt": "2026-09-20T08:00:00Z"
+    },
+    {
+      "sourceId": "service-directory-2026-09",
+      "serviceId": "checkout-web",
+      "ownerId": "kai",
+      "effectiveAt": "2026-09-20T08:00:00Z"
+    },
+    {
+      "sourceId": "service-directory-2026-09",
+      "serviceId": "notification-service",
+      "ownerId": "pia",
+      "effectiveAt": "2026-09-20T08:00:00Z"
+    },
+    {
+      "sourceId": "service-directory-2026-09",
+      "serviceId": "identity-service",
+      "ownerId": "uma",
+      "effectiveAt": "2026-09-20T08:00:00Z"
+    },
+    {
+      "sourceId": "service-directory-2026-09",
+      "serviceId": "analytics-warehouse",
+      "ownerId": "lena",
+      "effectiveAt": "2026-09-20T08:00:00Z"
+    },
+    {
+      "sourceId": "cc-1031",
+      "serviceId": "billing-gateway",
+      "ownerId": "ben",
+      "effectiveAt": "2026-10-14T11:00:00Z"
+    },
+    {
+      "sourceId": "msg-017",
+      "serviceId": "billing-gateway",
+      "ownerId": "aria",
+      "effectiveAt": "2026-10-14T16:00:00Z"
+    },
+    {
+      "sourceId": "runbook-ml-pipeline",
+      "serviceId": "ml-pipeline",
+      "ownerId": "cora",
+      "effectiveAt": "2026-10-01T09:00:00Z"
+    },
+    {
+      "sourceId": "wiki-ml-pipeline",
+      "serviceId": "ml-pipeline",
+      "ownerId": "dev",
+      "effectiveAt": "2026-10-13T14:00:00Z"
+    },
+    {
+      "sourceId": "cc-0990",
+      "serviceId": "payments-api",
+      "ownerId": "aria",
+      "effectiveAt": "2026-10-12T12:00:00Z"
+    },
+    {
+      "sourceId": "cc-0991",
+      "serviceId": "payments-api",
+      "ownerId": "cora",
+      "effectiveAt": "2026-10-12T12:00:00Z"
+    },
+    {
+      "sourceId": "msg-022",
+      "serviceId": "search-index",
+      "ownerId": "dev",
+      "effectiveAt": "2026-10-07T10:05:00Z"
+    },
+    {
+      "sourceId": "runbook-feature-store",
+      "serviceId": "feature-store",
+      "ownerId": "jun",
+      "effectiveAt": "2026-09-10T09:00:00Z"
+    },
+    {
+      "sourceId": "cc-1012",
+      "serviceId": "ledger-service",
+      "ownerId": "omar",
+      "effectiveAt": "2026-10-03T09:00:00Z"
+    },
+    {
+      "sourceId": "NOTIF-7#c2",
+      "serviceId": "notification-service",
+      "ownerId": "quinn",
+      "effectiveAt": "2026-10-11T09:15:00Z"
+    },
+    {
+      "sourceId": "runbook-event-bus",
+      "serviceId": "event-bus",
+      "ownerId": "vik",
+      "effectiveAt": "2026-08-18T09:00:00Z"
+    },
+    {
+      "sourceId": "cc-1020",
+      "serviceId": "infra-k8s",
+      "ownerId": "gus",
+      "effectiveAt": "2026-10-08T10:00:00Z"
+    }
+  ],
+  "decisions": [
+    {
+      "sourceId": "adr-007",
+      "decisionId": "ADR-007",
+      "title": "Publish ledger events through the Kafka event bus",
+      "decidedBy": "vik",
+      "serviceIds": [
+        "ledger-service",
+        "event-bus"
+      ],
+      "supersedes": null
+    },
+    {
+      "sourceId": "adr-009",
+      "decisionId": "ADR-009",
+      "title": "Back the feature store with Redis",
+      "decidedBy": "jun",
+      "serviceIds": [
+        "feature-store"
+      ],
+      "supersedes": null
+    },
+    {
+      "sourceId": "adr-011",
+      "decisionId": "ADR-011",
+      "title": "Reduce PCI scope by tokenizing card data at payments-api",
+      "decidedBy": "uma",
+      "serviceIds": [
+        "payments-api",
+        "checkout-web"
+      ],
+      "supersedes": null
+    },
+    {
+      "sourceId": "adr-012",
+      "decisionId": "ADR-012",
+      "title": "Replace Kafka publishing for ledger events with a Postgres transactional outbox",
+      "decidedBy": "omar",
+      "serviceIds": [
+        "ledger-service"
+      ],
+      "supersedes": "ADR-007"
+    }
+  ],
+  "answers": {
+    "billing-gateway@2026-10-16T12:00:00Z": "ben",
+    "billing-gateway@2026-09-25T00:00:00Z": "aria",
+    "ml-pipeline@2026-10-16T12:00:00Z": "cora",
+    "feature-store@2026-10-16T12:00:00Z": "jun",
+    "payments-api@2026-10-16T12:00:00Z": "ABSTAIN",
+    "search-index@2026-10-16T12:00:00Z": "ABSTAIN",
+    "checkout-web@2026-10-16T12:00:00Z": "kai",
+    "ledger-service@2026-10-16T12:00:00Z": "omar",
+    "notification-service@2026-10-16T12:00:00Z": "pia",
+    "identity-service@2026-10-16T12:00:00Z": "uma",
+    "event-bus@2026-10-16T12:00:00Z": "vik",
+    "analytics-warehouse@2026-10-16T12:00:00Z": "lena",
+    "mobile-app@2026-10-16T12:00:00Z": "ABSTAIN",
+    "infra-k8s@2026-10-16T12:00:00Z": "gus"
+  },
+  "abstainReasons": {
+    "payments-api": "cc-0990 (Aria) and cc-0991 (Cora) are both change-control, effective at the same instant (2026-10-12T12:00:00Z = 2026-10-12T19:00:00+07:00): unresolved conflict",
+    "search-index": "only evidence is chat msg-022 (Dev); low authority only. Tara resolves every search-index ticket (bus factor 1)",
+    "mobile-app": "no ownership statement anywhere"
+  },
+  "live": {
+    "ownership": [
+      {
+        "sourceId": "live-chat-ben-handoff",
+        "serviceId": "billing-gateway",
+        "ownerId": "cora",
+        "effectiveAt": "2026-10-16T08:00:00Z"
+      },
+      {
+        "sourceId": "live-cc-1043",
+        "serviceId": "billing-gateway",
+        "ownerId": "cora",
+        "effectiveAt": "2026-10-16T09:00:00Z"
+      }
+    ],
+    "decisions": [
+      {
+        "sourceId": "live-adr-015",
+        "decisionId": "ADR-015",
+        "title": "Move the ledger outbox relay to managed change data capture",
+        "decidedBy": "omar",
+        "serviceIds": [
+          "ledger-service"
+        ],
+        "supersedes": "ADR-012"
+      }
+    ],
+    "steps": [
+      {
+        "after": "live-chat-ben-handoff",
+        "answers": {
+          "billing-gateway@2026-10-16T12:00:00Z": "ben"
+        },
+        "note": "chat (35) cannot override cc-1031 (90)"
+      },
+      {
+        "after": "live-cc-1043",
+        "answers": {
+          "billing-gateway@2026-10-16T12:00:00Z": "cora",
+          "billing-gateway@2026-10-15T00:00:00Z": "ben"
+        }
+      },
+      {
+        "after": "live-adr-015",
+        "currentDecisions": {
+          "ledger-service": [
+            "ADR-015"
+          ]
+        },
+        "note": "ADR-015 supersedes ADR-012, which superseded ADR-007"
+      }
+    ]
+  }
+}

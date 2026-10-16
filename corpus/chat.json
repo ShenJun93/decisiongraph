@@ -1,0 +1,47 @@
+[
+  { "id": "msg-001", "channel": "#ledger", "author": "omar", "at": "2026-09-25T09:00:00Z", "text": "LED-41 again: duplicate ledger events after the reconciliation consumer rebalanced. That's the third time this quarter and finance caught it before we did." },
+  { "id": "msg-002", "channel": "#ledger", "author": "vik", "at": "2026-09-25T09:20:00Z", "text": "Looked at it. The consumer commits offsets after it applies the batch, so a rebalance in between replays the whole batch. We can tune timeouts, but it's whack-a-mole." },
+  { "id": "msg-003", "channel": "#ledger", "author": "omar", "at": "2026-09-25T09:41:00Z", "text": "I'd rather fix it at the source: write the ledger row and the event in the same Postgres transaction and relay from an outbox table. Then Kafka only ever sees committed facts." },
+  { "id": "msg-004", "channel": "#ledger", "author": "wes", "at": "2026-09-25T09:50:00Z", "text": "From the bus side that's fine. Keep the ledger-events topic and schema as they are and nobody downstream has to change anything." },
+  { "id": "msg-005", "channel": "#ledger", "author": "nora", "at": "2026-09-25T10:02:00Z", "text": "Works for me if reconciliation gets simpler. Omar, can you write it up as an ADR so it formally replaces ADR-007? I don't want two answers to how ledger events get published." },
+  { "id": "msg-006", "channel": "#ledger", "author": "omar", "at": "2026-09-30T17:05:00Z", "text": "LED-41 is closed with a dedupe guard for now. Drafting ADR-012 for the outbox, comments welcome by Thursday." },
+  { "id": "msg-007", "channel": "#ledger", "author": "omar", "at": "2026-10-02T15:05:00Z", "text": "ADR-012 is accepted: ledger events go through a Postgres transactional outbox and ADR-007 is superseded. The topic stays the same." },
+  { "id": "msg-008", "channel": "#ledger", "author": "vik", "at": "2026-10-02T15:30:00Z", "text": "Thanks for writing it up. I'll mark ADR-007 as historical in the event bus docs once the relay is live." },
+  { "id": "msg-009", "channel": "#ledger", "author": "omar", "at": "2026-10-09T10:10:00Z", "text": "Opened LED-44 for the outbox backlog alert and the retention job for sent rows." },
+
+  { "id": "msg-010", "channel": "#payments", "author": "nora", "at": "2026-09-21T09:00:00Z", "text": "Reminder: PCI scoping review for the tokenization proposal is Tuesday. Bring questions about the iframe flow." },
+  { "id": "msg-011", "channel": "#payments", "author": "aria", "at": "2026-10-02T08:15:00Z", "text": "Settlement batch ran clean last night after the pool split from PAY-18. Thanks Nora!" },
+  { "id": "msg-012", "channel": "#payments", "author": "ben", "at": "2026-10-06T09:30:00Z", "text": "Picked up BILL-4, the giant invoice PDFs. Looks like the renderer holds the whole table in memory." },
+  { "id": "msg-013", "channel": "#payments", "author": "cora", "at": "2026-10-12T13:10:00Z", "text": "Two change-control records landed today for payments-api, CC-0990 and CC-0991, with the same effective time. Has anyone checked whether they agree?" },
+  { "id": "msg-014", "channel": "#payments", "author": "nora", "at": "2026-10-12T13:30:00Z", "text": "I approved both without noticing the overlap, my mistake. I'll take it to the change board, please don't act on either one yet." },
+  { "id": "msg-015", "channel": "#payments", "author": "ben", "at": "2026-10-14T11:20:00Z", "text": "CC-1031 is approved. Thanks everyone for the handover notes, I've read all of them twice." },
+  { "id": "msg-016", "channel": "#payments", "author": "kai", "at": "2026-10-14T15:55:00Z", "text": "Who do I talk to about a declined-renewal bug in billing gateway? Customers on annual plans are getting cancelled after one soft decline." },
+  { "id": "msg-017", "channel": "#payments", "author": "omar", "at": "2026-10-14T16:00:00Z", "text": "Aria still owns billing gateway, ping her." },
+  { "id": "msg-018", "channel": "#payments", "author": "kai", "at": "2026-10-14T16:03:00Z", "text": "Thanks, will do." },
+  { "id": "msg-019", "channel": "#payments", "author": "cora", "at": "2026-10-15T10:40:00Z", "text": "Fraud scores for renewal attempts are now attached to the renewal payload, so dunning can skip retries on high-risk cards." },
+
+  { "id": "msg-020", "channel": "#search", "author": "sam", "at": "2026-10-06T16:00:00Z", "text": "Full reindex for the fall catalog finished in 41 minutes, down from 70 last month." },
+  { "id": "msg-021", "channel": "#search", "author": "yara", "at": "2026-10-07T10:00:00Z", "text": "Who should approve the new analyzer change before it goes to 100%?" },
+  { "id": "msg-022", "channel": "#search", "author": "rosa", "at": "2026-10-07T10:05:00Z", "text": "Dev owns the search index, so ask him." },
+  { "id": "msg-023", "channel": "#search", "author": "tara", "at": "2026-10-07T10:30:00Z", "text": "I've put the analyzer change behind a flag at 10%. SRCH-10 has the latency numbers, they're not great yet." },
+  { "id": "msg-024", "channel": "#search", "author": "milo", "at": "2026-10-13T09:00:00Z", "text": "Orphaned indices from the alias swaps are eating 1.2 TB. Tracking the cleanup in SRCH-12." },
+
+  { "id": "msg-025", "channel": "#platform", "author": "gus", "at": "2026-10-08T12:00:00Z", "text": "CC-1020 is through. From now on cluster changes go in the Tuesday platform change window, no exceptions without a ticket." },
+  { "id": "msg-026", "channel": "#platform", "author": "eli", "at": "2026-10-06T12:10:00Z", "text": "Autoscaler fix from INFRA-22 is live. Overnight node count dropped from 38 to 17." },
+  { "id": "msg-027", "channel": "#platform", "author": "vik", "at": "2026-10-07T15:40:00Z", "text": "All five brokers are on Kafka 3.8 now. Thanks Wes for babysitting the rolls." },
+  { "id": "msg-028", "channel": "#platform", "author": "fay", "at": "2026-10-10T12:30:00Z", "text": "Terraform defaults for DLQ topics are fixed, 14 days retention. If you created a DLQ by hand, please move it into the module." },
+  { "id": "msg-029", "channel": "#platform", "author": "wes", "at": "2026-10-12T10:00:00Z", "text": "Heads up: once the ledger outbox relay is on, the old direct publisher stops writing to Kafka. ADR-012 has the details." },
+  { "id": "msg-030", "channel": "#platform", "author": "eli", "at": "2026-10-13T15:10:00Z", "text": "Ingress 502s during deploys are gone, preStop hook and draining were the fix (INFRA-27)." },
+
+  { "id": "msg-031", "channel": "#data", "author": "jun", "at": "2026-09-02T09:00:00Z", "text": "ADR-009 is in: the online feature layer moves to Redis, the offline copy stays in the warehouse." },
+  { "id": "msg-032", "channel": "#data", "author": "hana", "at": "2026-09-18T14:10:00Z", "text": "Weekend drift pages were a baseline problem, not real drift. Per-day-of-week baselines are live (ML-30)." },
+  { "id": "msg-033", "channel": "#data", "author": "ivan", "at": "2026-10-04T12:10:00Z", "text": "Retrained fraud model with chargeback labels is promoted. AUC up 0.03 on the holdout and fewer false positives." },
+  { "id": "msg-034", "channel": "#data", "author": "lena", "at": "2026-09-26T15:20:00Z", "text": "The nightly load now waits for late events, BI and finance revenue match again (DWH-3)." },
+  { "id": "msg-035", "channel": "#data", "author": "dev", "at": "2026-10-13T14:10:00Z", "text": "Updated the ML pipeline wiki page with the new training schedule that starts on the 19th." },
+  { "id": "msg-036", "channel": "#data", "author": "cora", "at": "2026-10-13T15:00:00Z", "text": "Reminder that training DAG failures page the data on-call first; the rotation is in the runbook, not the wiki." },
+
+  { "id": "msg-037", "channel": "#general", "author": "uma", "at": "2026-09-23T09:00:00Z", "text": "ADR-011 is accepted. Card data will be tokenized at payments-api, and the checkout frontend never sees a raw card number." },
+  { "id": "msg-038", "channel": "#general", "author": "dina", "at": "2026-09-24T10:00:00Z", "text": "Security reminder: no card numbers in screenshots or tickets, not even test ones from production-like systems." },
+  { "id": "msg-039", "channel": "#general", "author": "bea", "at": "2026-10-08T17:00:00Z", "text": "Mobile release 5.12 is in staged rollout at 10%. Project Atlas checkout demo is on Friday at demo hour." },
+  { "id": "msg-040", "channel": "#general", "author": "felix", "at": "2026-10-15T08:30:00Z", "text": "Pen test window for login and SSO flows starts Monday. Expect some noisy alerts from the test accounts." }
+]

@@ -1,0 +1,9 @@
+{
+  "id": "live-chat-ben-handoff",
+  "format": "chat",
+  "kind": "chat",
+  "channel": "#payments",
+  "author": "ben",
+  "at": "2026-10-16T08:00:00Z",
+  "text": "Heads up: I'm handing billing gateway over to Cora this week, so start sending renewal questions her way."
+}

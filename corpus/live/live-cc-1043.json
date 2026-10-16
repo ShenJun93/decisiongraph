@@ -1,0 +1,9 @@
+{
+  "id": "live-cc-1043",
+  "format": "doc",
+  "kind": "change-control",
+  "title": "CC-1043: Transfer ownership of billing-gateway",
+  "author": "gus",
+  "date": "2026-10-16T09:00:00Z",
+  "text": "# CC-1043: Transfer ownership of billing-gateway\n\n- Change type: Ownership transfer\n- Filed by: Gus (change advisory board coordinator)\n- Approved by: Nora (Payments lead)\n- Effective: 2026-10-16T09:00:00Z (immediately)\n- Risk: Low\n- Related project: Project Orion\n\n## Change\n\nOwnership of billing-gateway transfers from Ben to Cora, effective immediately (2026-10-16T09:00:00Z).\n\n## Background\n\nBen is moving to the tokenization cutover work through the end of the year. Cora already attaches fraud scores to the renewal payload and has reviewed most of the dunning changes this month.\n\n## Rollout\n\n1. Update the service catalog entry and the escalation policy.\n2. Reassign open BILL tickets.\n3. Announce in #payments.\n"
+}

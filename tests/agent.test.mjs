@@ -1,115 +1,59 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {answerWithGraphTool,OWNER_LOOKUP_TOOL} from "../src/agent.mjs";
-import {createLocalModel,localModelConfig} from "../src/local-model.mjs";
+import {parseQuestionTime, grounded, explanationAgrees, templateExplanation} from "../src/agent.mjs";
 
-const asOf="2026-10-15T00:00:00.000Z";
-const response=(name="get_project_owner_evidence",args='{"projectId":"orion"}')=>({
-  choices:[{message:{tool_calls:[{id:"call_1",type:"function",
-    function:{name,arguments:args}}]}}]
-});
-const synthetic=[{projectId:"orion",serviceId:"billing-gateway",claimId:"c-oct",
-  effectiveAt:"2026-10-14T11:00:00.000Z",sourceId:"signed-change",sourceRank:90,
-  ownerId:"ben",ownerName:"Ben (synthetic)"}];
+const now = new Date("2026-10-16T12:00:00Z");
 
-test("LLM chooses one allowlisted tool; graph query supplies owner, not model text",async()=>{
-  let modelCalls=0, graphCalls=0;
-  const model=async(req)=>{
-    modelCalls++;
-    assert.equal(req.tool_choice,"required");
-    assert.deepEqual(req.tools,[OWNER_LOOKUP_TOOL]);
-    assert.match(req.messages[0].content,/MUST call/);
-    return response();
-  };
-  const graph={async query(q,{params}){graphCalls++;assert.ok(q.includes("MATCH (project:Project"));assert.deepEqual(params,{projectId:"orion"});return synthetic;}};
-  const out=await answerWithGraphTool({model,graph,projectId:"orion",asOf});
-  assert.equal(modelCalls,1);assert.equal(graphCalls,1);
-  assert.equal(out.status,"HUMAN_REVIEW_DRAFT");
-  assert.equal(out.currentOwner.id,"ben");
-  assert.equal(out.agentToolCallVerified,true);
-  assert.equal(out.authorizedExternalActions,false);
+test("dates in the question set the point in time; vague or future times refuse", () => {
+  assert.equal(parseQuestionTime("Who owned the billing gateway on September 25, 2026?", now).asOf, "2026-09-25T23:59:59.000Z");
+  assert.equal(parseQuestionTime("owner on 2026-09-25?", now).asOf, "2026-09-25T23:59:59.000Z");
+  assert.equal(parseQuestionTime("owner on 25th Sep?", now).asOf, "2026-09-25T23:59:59.000Z");
+  assert.equal(parseQuestionTime("who owned it yesterday", now).asOf, "2026-10-15T23:59:59.000Z");
+  assert.equal(parseQuestionTime("Who owns Orion?", now).source, "now");
+  assert.equal(parseQuestionTime("Who owned it last month?", now).error, "AMBIGUOUS_TIME");
+  assert.equal(parseQuestionTime("Who owned it in September?", now).error, "AMBIGUOUS_TIME");
+  assert.equal(parseQuestionTime("Who used to own it?", now).error, "AMBIGUOUS_TIME");
+  assert.equal(parseQuestionTime("Sep 2 or Sep 25?", now).error, "AMBIGUOUS_TIME");
+  assert.equal(parseQuestionTime("Who owns it on Dec 1?", now).error, "FUTURE_TIME");
+  assert.equal(parseQuestionTime("Feb 30 2026", now).error, "AMBIGUOUS_TIME");
 });
 
-test("model without tool call is not claimed to be agent",async()=>{
-  let n=0;const graph={async query(){n++;return synthetic;}};
-  const out=await answerWithGraphTool({model:async()=>({choices:[{message:{content:"Approve!"}}]}),graph,asOf});
-  assert.equal(out.reason,"MODEL_TOOL_CALL_REQUIRED");assert.equal(n,0);
+const e = {
+  projects: [{id: "orion", name: "Project Orion", aliases: [], serviceIds: ["billing-gateway"]}],
+  services: [{id: "billing-gateway", name: "Billing Gateway", aliases: ["billing"]}, {id: "search-index", name: "Search Index", aliases: []}],
+  topics: [{id: "kafka", name: "Kafka", aliases: []}],
+  decisions: [{id: "ADR-012", title: "Postgres transactional outbox"}]
+};
+
+test("the tool subject must be named in the question (or be a service of a named project)", () => {
+  assert.ok(grounded("Who should sign off the Orion release?", "orion", e));
+  assert.ok(grounded("Who should sign off the Orion release?", "billing-gateway", e));
+  assert.ok(grounded("who knows kafka", "kafka", e));
+  assert.ok(grounded("why ADR 12?", "ADR-012", e));
+  assert.ok(!grounded("Who owns Project Zeus?", "orion", e));
+  assert.ok(!grounded("Who owns Project Zeus?", "search-index", e));
 });
 
-test("unrecognized or malicious tool calls never reach graph",async()=>{
-  let n=0;const graph={async query(){n++;return synthetic;}};
-  for (const bad of [response("delete_project"),response("get_project_owner_evidence",'{"projectId":"other"}'),
-    response("get_project_owner_evidence",'{"projectId":"orion","force":true}'),
-    response("get_project_owner_evidence","{")]) {
-    const out=await answerWithGraphTool({model:async()=>bad,graph,asOf});
-    assert.equal(out.status,"ABSTAIN");
-  }
-  assert.equal(n,0);
+const people = [{id: "ben", name: "Ben Ortiz"}, {id: "aria", name: "Aria Okafor"}, {id: "zane", name: "Zane Cole"}];
+const owner = {kind: "owner", services: [{status: "OWNER", serviceId: "billing-gateway", serviceName: "Billing Gateway",
+  owner: {id: "ben", name: "Ben Ortiz"}, basis: {sourceId: "cc-1031", sourceKind: "change-control", authority: 90, effectiveAt: "2026-10-14T11:00:00Z"},
+  outranked: [{ownerId: "aria"}]}]};
+
+test("model explanations that agree with the graph are kept", () => {
+  assert.ok(explanationAgrees("Ben owns the Billing Gateway per change-control cc-1031; Aria's directory entry is older.", owner, people));
 });
 
-test("real graph outage is an abstain even after valid LLM tool selection",async()=>{
-  const out=await answerWithGraphTool({model:async()=>response(),
-    graph:{async query(){throw new Error("ECONNREFUSED")}},asOf});
-  assert.equal(out.status,"ABSTAIN");
-  assert.equal(out.reason,"GRAPH_UNAVAILABLE");
-  assert.equal(out.agentToolCallVerified,true);
-  assert.equal(out.proposedAction,null);
+test("explanations that approve, name an outranked owner, or name someone outside the evidence are rejected", () => {
+  assert.ok(!explanationAgrees("Ben owns it and the release is approved.", owner, people));
+  assert.ok(!explanationAgrees("Aria owns the billing gateway; Ben was mentioned too.", owner, people));
+  assert.ok(!explanationAgrees("Ben owns it, and Zane approved the Orion release earlier.", owner, people));
+  assert.ok(!explanationAgrees("The billing gateway has an owner.", owner, people));
 });
 
-test("incomplete graph provenance never becomes a review draft",async()=>{
-  const out=await answerWithGraphTool({model:async()=>response(),
-    graph:{async query(){return [{...synthetic[0],sourceId:""}]}},asOf});
-  assert.equal(out.reason,"INCOMPLETE_GRAPH_PROVENANCE");
-  assert.equal(out.authorizedExternalActions,false);
-});
-
-test("model failure and invalid project ID abstain without querying graph",async()=>{
-  let n=0;const graph={async query(){n++;return synthetic;}};
-  const failed=await answerWithGraphTool({model:async()=>{throw Error("offline");},graph,asOf});
-  assert.equal(failed.reason,"LOCAL_MODEL_UNAVAILABLE");
-  const invalid=await answerWithGraphTool({model:async()=>response(),graph,projectId:"../secret",asOf});
-  assert.equal(invalid.reason,"INVALID_AGENT_REQUEST");
-  assert.equal(n,0);
-});
-
-test("model runtime cannot route requests to paid/remote endpoints",()=>{
-  assert.throws(()=>localModelConfig({LOCAL_LLM_URL:"https://api.openai.com/v1/chat/completions",LOCAL_LLM_MODEL:"x"}));
-  assert.throws(()=>localModelConfig({LOCAL_LLM_URL:"http://192.168.1.1:18080/v1/chat/completions",LOCAL_LLM_MODEL:"x"}));
-  assert.throws(()=>localModelConfig({LOCAL_LLM_URL:"http://127.0.0.1:18080/v1/chat/completions"}));
-  assert.equal(localModelConfig({LOCAL_LLM_URL:"http://127.0.0.1:18080/v1/chat/completions",LOCAL_LLM_MODEL:"verified-licensed-model"}).model,"verified-licensed-model");
-});
-
-test("direct model-adapter config cannot bypass localhost-only enforcement",()=>{
-  let requests=0;
-  const spy=async()=>{requests++;throw new Error("must not execute");};
-  for(const endpoint of [
-    "https://api.openai.com/v1/chat/completions",
-    "http://127.0.0.1.evil.invalid:18080/v1/chat/completions",
-    "http://192.168.1.20:18080/v1/chat/completions",
-    "http://127.0.0.1:18080/v1/chat/completions?redirect=1"
-  ]) {
-    assert.throws(()=>createLocalModel({endpoint,model:"license-verified"},spy),
-      /Loopback-only/);
-  }
-  assert.throws(()=>createLocalModel({
-    endpoint:"http://127.0.0.1:18080/v1/chat/completions",model:""
-  },spy),/LOCAL_LLM_MODEL/);
-  assert.equal(requests,0);
-});
-
-test("local adapter issues a one-call tools payload without key or external actions",async()=>{
-  let hits=0;
-  const stub=async(url,options)=>{
-    hits++;
-    assert.match(url,/^http:\/\/127\.0\.0\.1:/);
-    assert.equal(options.method,"POST");
-    assert.equal(options.headers.authorization,undefined);
-    const payload=JSON.parse(options.body);
-    assert.equal(payload.model,"license-verified");
-    assert.equal(payload.tool_choice,"required");
-    return {ok:true,headers:{get(){return null;}},async text(){return JSON.stringify(response());}};
-  };
-  const model=createLocalModel({endpoint:"http://127.0.0.1:18080/v1/chat/completions",model:"license-verified"},stub);
-  assert.deepEqual(await model({messages:[],tools:[OWNER_LOOKUP_TOOL],tool_choice:"required"}),response());
-  assert.equal(hits,1);
+test("abstentions must say no owner can be named", () => {
+  const abstain = {kind: "owner", services: [{status: "ABSTAIN", serviceId: "payments-api", reason: "UNRESOLVED_EQUAL_AUTHORITY_CONFLICT",
+    competing: [{ownerId: "aria"}, {ownerId: "ben"}]}]};
+  assert.ok(explanationAgrees("No owner can be named: Aria and Ben are named by equally authoritative records.", abstain, people));
+  assert.ok(!explanationAgrees("Aria and Ben both handle payments.", abstain, people));
+  assert.match(templateExplanation(abstain), /no owner named/);
 });

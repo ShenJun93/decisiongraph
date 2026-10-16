@@ -1,0 +1,902 @@
+{
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "extractedAt": "2026-10-16T13:27:05.199Z",
+ "seconds": 46,
+ "totals": {
+  "sources": 140,
+  "ownership": 17,
+  "decisions": 4,
+  "rejected": 3,
+  "errors": 0
+ },
+ "results": {
+  "adr-007": {
+   "ownership": [],
+   "decisions": [
+    {
+     "decisionId": "ADR-007",
+     "title": "ADR-007: Publish ledger events through the Kafka event bus",
+     "decidedBy": "vik",
+     "serviceIds": [
+      "ledger-service",
+      "event-bus"
+     ],
+     "supersedes": null,
+     "quote": "- Decided by: Vik"
+    }
+   ],
+   "rejected": []
+  },
+  "adr-009": {
+   "ownership": [],
+   "decisions": [
+    {
+     "decisionId": "ADR-009",
+     "title": "ADR-009: Back the feature store with Redis",
+     "decidedBy": "jun",
+     "serviceIds": [
+      "feature-store"
+     ],
+     "supersedes": null,
+     "quote": "- Decided by: Jun"
+    }
+   ],
+   "rejected": []
+  },
+  "adr-011": {
+   "ownership": [],
+   "decisions": [
+    {
+     "decisionId": "ADR-011",
+     "title": "ADR-011: Reduce PCI scope by tokenizing card data at payments-api",
+     "decidedBy": "uma",
+     "serviceIds": [
+      "payments-api",
+      "checkout-web"
+     ],
+     "supersedes": null,
+     "quote": "- Decided by: Uma"
+    }
+   ],
+   "rejected": []
+  },
+  "adr-012": {
+   "ownership": [],
+   "decisions": [
+    {
+     "decisionId": "ADR-012",
+     "title": "ADR-012: Replace Kafka publishing for ledger events with a Postgres transactional outbox",
+     "decidedBy": "omar",
+     "serviceIds": [
+      "ledger-service"
+     ],
+     "supersedes": "ADR-007",
+     "quote": "- Decided by: Omar"
+    }
+   ],
+   "rejected": []
+  },
+  "cc-0990": {
+   "ownership": [
+    {
+     "serviceId": "payments-api",
+     "ownerId": "aria",
+     "quote": "Ownership of payments-api is assigned to Aria Okafor, effective 2026-10-12T12:00:00Z."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "cc-0991": {
+   "ownership": [
+    {
+     "serviceId": "payments-api",
+     "ownerId": "cora",
+     "quote": "Ownership of the Payments API (payments-api) is assigned to Cora Lindqvist, effective 2026-10-12T19:00:00+07:00."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "cc-1012": {
+   "ownership": [
+    {
+     "serviceId": "ledger-service",
+     "ownerId": "omar",
+     "quote": "Omar Haddad owns ledger-service from 2026-10-03T09:00:00Z."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "cc-1020": {
+   "ownership": [
+    {
+     "serviceId": "infra-k8s",
+     "ownerId": "gus",
+     "quote": "Gus Delgado owns infra-k8s, the shared Kubernetes platform, effective 2026-10-08T10:00:00Z."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "cc-1031": {
+   "ownership": [
+    {
+     "serviceId": "billing-gateway",
+     "ownerId": "ben",
+     "quote": "Ownership of billing-gateway transfers from Aria to Ben, effective 2026-10-14T11:00:00Z."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "runbook-event-bus": {
+   "ownership": [
+    {
+     "serviceId": "event-bus",
+     "ownerId": "vik",
+     "quote": "Vik Sharma owns the event bus and should be paged after the platform on-call has worked through the steps below."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "runbook-feature-store": {
+   "ownership": [
+    {
+     "serviceId": "feature-store",
+     "ownerId": "jun",
+     "quote": "Jun Park owns the feature store and is the second-line escalation after the data on-call."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "runbook-ml-pipeline": {
+   "ownership": [
+    {
+     "serviceId": "ml-pipeline",
+     "ownerId": "cora",
+     "quote": "Cora Lindqvist owns the ML pipeline (ml-pipeline) and is the escalation point after the data on-call."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "service-directory-2026-09": {
+   "ownership": [
+    {
+     "serviceId": "billing-gateway",
+     "ownerId": "aria",
+     "quote": "| billing-gateway (Billing Gateway) | Aria Okafor | Payments | 1 | Owner of billing-gateway is Aria; invoices, renewals, dunning |"
+    },
+    {
+     "serviceId": "checkout-web",
+     "ownerId": "kai",
+     "quote": "| checkout-web (Checkout Web) | Kai Nakamura | Growth | 1 | Owner of checkout-web is Kai; customer-facing checkout flow |"
+    },
+    {
+     "serviceId": "notification-service",
+     "ownerId": "pia",
+     "quote": "| notification-service (Notification Service) | Pia Andersen | Growth | 2 | Owner of notification-service is Pia; email, SMS and push fan-out |"
+    },
+    {
+     "serviceId": "identity-service",
+     "ownerId": "uma",
+     "quote": "| identity-service (Identity Service) | Uma Raman | Security | 1 | Owner of identity-service is Uma; login, sessions, SSO |"
+    },
+    {
+     "serviceId": "analytics-warehouse",
+     "ownerId": "lena",
+     "quote": "| analytics-warehouse (Analytics Warehouse) | Lena Fischer | Data | 2 | Owner of analytics-warehouse is Lena; nightly loads and BI models |"
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "wiki-ml-pipeline": {
+   "ownership": [
+    {
+     "serviceId": "ml-pipeline",
+     "ownerId": "dev",
+     "quote": "Dev Mehta owns the ML pipeline and reviews changes to the training DAGs."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "wiki-onboarding-tips": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "wiki-project-index": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-12": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-12#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-12#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-15": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-15#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-15#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-18": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-18#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-18#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-21": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-21#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-21#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-24": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-24#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-27": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "PAY-27#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BILL-4": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BILL-4#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BILL-4#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BILL-6": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BILL-6#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BILL-6#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-9": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-9#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-9#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-11": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-11#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-11#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-14": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-14#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-16": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "BUS-16#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-3": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-3#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-5": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-5#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-8": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-8#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-8#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-10": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-10#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-10#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-12": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "SRCH-12#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "LED-41": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "LED-41#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "LED-41#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "LED-41#c3": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "LED-44": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-20": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-20#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-22": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-22#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-22#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-25": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-25#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-25#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-27": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "INFRA-27#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-30": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-30#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-33": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-33#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-33#c2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-35": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-35#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-37": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "ML-37#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "NOTIF-7": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "NOTIF-7#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "NOTIF-7#c2": {
+   "ownership": [
+    {
+     "serviceId": "notification-service",
+     "ownerId": "quinn",
+     "quote": "Quinn is taking over notification-service, so please loop him in on anything new here."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "NOTIF-7#c3": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "NOTIF-9": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "NOTIF-9#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "IAM-5": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "IAM-5#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "IAM-8": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "IAM-8#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "DWH-3": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "DWH-3#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "CHK-14": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "CHK-14#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "MOB-2": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "MOB-2#c1": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-001": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-002": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-003": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-004": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-005": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-006": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": [
+    {
+     "type": "decision",
+     "fact": {
+      "decisionId": "ADR-012",
+      "title": "Drafting ADR-012 for the outbox, comments welcome by Thursday.",
+      "decidedBy": "omar",
+      "serviceIds": [],
+      "supersedes": null,
+      "quote": "Drafting ADR-012 for the outbox, comments welcome by Thursday."
+     },
+     "reason": "DECISION_NOT_FROM_ADR"
+    }
+   ]
+  },
+  "msg-007": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": [
+    {
+     "type": "decision",
+     "fact": {
+      "decisionId": "ADR-012",
+      "title": "ledger events go through a Postgres transactional outbox",
+      "decidedBy": "omar",
+      "serviceIds": [
+       "ledger-service"
+      ],
+      "supersedes": "ADR-007",
+      "quote": "ADR-012 is accepted: ledger events go through a Postgres transactional outbox and ADR-007 is superseded."
+     },
+     "reason": "DECISION_NOT_FROM_ADR"
+    }
+   ]
+  },
+  "msg-008": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-009": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-010": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-011": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-012": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-013": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-014": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-015": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-016": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-017": {
+   "ownership": [
+    {
+     "serviceId": "billing-gateway",
+     "ownerId": "aria",
+     "quote": "Aria still owns billing gateway, ping her."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-018": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-019": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-020": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-021": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-022": {
+   "ownership": [
+    {
+     "serviceId": "search-index",
+     "ownerId": "dev",
+     "quote": "Dev owns the search index, so ask him."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-023": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-024": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-025": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-026": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-027": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-028": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-029": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-030": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-031": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-032": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-033": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-034": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-035": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-036": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-037": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": [
+    {
+     "type": "decision",
+     "fact": {
+      "decisionId": "ADR-011",
+      "title": "Card data will be tokenized at payments-api, and the checkout frontend never sees a raw card number.",
+      "decidedBy": "uma",
+      "serviceIds": [
+       "payments-api",
+       "checkout-web"
+      ],
+      "supersedes": null,
+      "quote": "ADR-011 is accepted."
+     },
+     "reason": "DECISION_NOT_FROM_ADR"
+    }
+   ]
+  },
+  "msg-038": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-039": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  },
+  "msg-040": {
+   "ownership": [],
+   "decisions": [],
+   "rejected": []
+  }
+ }
+}

@@ -8,6 +8,8 @@ services:
     cpus: 2.0
     ports:
       - "127.0.0.1:16379:6379"
+      # FalkorDB Browser (bundled in the image): explore the graph visually at http://127.0.0.1:13000
+      - "127.0.0.1:13000:3000"
     volumes:
       - graph_hacks_2026_data:/data
 volumes:

@@ -1,0 +1,561 @@
+[
+  {
+    "id": "PAY-12",
+    "title": "Idempotency keys ignored on retried refunds",
+    "serviceId": "payments-api",
+    "topicIds": ["postgres"],
+    "reporter": "nora",
+    "assignee": "aria",
+    "resolvedBy": "aria",
+    "status": "resolved",
+    "createdAt": "2026-08-19T09:12:00Z",
+    "resolvedAt": "2026-08-22T15:40:00Z",
+    "body": "A merchant retried a refund call after a timeout and got two refunds. The Idempotency-Key header is read, but the lookup runs before the refund row is committed, so two concurrent requests both miss it.",
+    "comments": [
+      { "author": "aria", "at": "2026-08-20T10:05:00Z", "text": "Reproduced with two parallel requests. Moving the key insert into the same transaction with a unique constraint." },
+      { "author": "aria", "at": "2026-08-22T15:38:00Z", "text": "Fixed: unique index on (merchant_id, idempotency_key), second request now returns the first response. Backfilled the two duplicate refunds with finance." }
+    ]
+  },
+  {
+    "id": "PAY-15",
+    "title": "Tokenization endpoint returns 500 for Amex test cards",
+    "serviceId": "payments-api",
+    "topicIds": ["pci-compliance"],
+    "reporter": "kai",
+    "assignee": "cora",
+    "resolvedBy": "cora",
+    "status": "resolved",
+    "createdAt": "2026-09-26T13:00:00Z",
+    "resolvedAt": "2026-09-29T11:20:00Z",
+    "body": "While testing the new card iframe for Project Atlas, every Amex test number comes back with a 500 from /v2/tokens. Visa and Mastercard are fine.",
+    "comments": [
+      { "author": "cora", "at": "2026-09-27T08:45:00Z", "text": "The Luhn check is fine; the length validator assumes 16 digits. Amex is 15." },
+      { "author": "cora", "at": "2026-09-29T11:18:00Z", "text": "Length check now uses the BIN range table. Added Amex, Diners and UnionPay test numbers to the contract tests." }
+    ]
+  },
+  {
+    "id": "PAY-18",
+    "title": "Connection pool exhaustion during settlement batch",
+    "serviceId": "payments-api",
+    "topicIds": ["postgres"],
+    "reporter": "omar",
+    "assignee": "nora",
+    "resolvedBy": "nora",
+    "status": "resolved",
+    "createdAt": "2026-09-28T02:10:00Z",
+    "resolvedAt": "2026-10-01T16:00:00Z",
+    "body": "Settlement batch at 02:00 UTC made charge requests time out for about six minutes. Pool metrics show all 40 connections busy, most of them held by the settlement export.",
+    "comments": [
+      { "author": "nora", "at": "2026-09-29T09:30:00Z", "text": "Settlement export and live charges share one pool. Splitting them: separate pool of 10 for batch work, live traffic keeps 40." },
+      { "author": "nora", "at": "2026-10-01T15:55:00Z", "text": "Deployed. Last night's batch ran with zero charge timeouts." }
+    ]
+  },
+  {
+    "id": "PAY-21",
+    "title": "Remove raw PAN fragments from payments-api debug logs",
+    "serviceId": "payments-api",
+    "topicIds": ["pci-compliance"],
+    "reporter": "gwen",
+    "assignee": "cora",
+    "resolvedBy": "cora",
+    "status": "resolved",
+    "createdAt": "2026-07-14T10:00:00Z",
+    "resolvedAt": "2026-07-17T18:30:00Z",
+    "body": "Log sampling found the first 12 digits of card numbers in DEBUG-level request logs for the charge route. This is a PCI finding and has to be fixed before the evidence deadline.",
+    "comments": [
+      { "author": "gwen", "at": "2026-07-14T10:20:00Z", "text": "Logs older than 7 days are already purged. Please confirm the retention on the debug index." },
+      { "author": "cora", "at": "2026-07-17T18:28:00Z", "text": "Request body logging removed for charge and token routes, redaction filter added at the logger, and the debug index purged. Evidence attached for Gwen." }
+    ]
+  },
+  {
+    "id": "PAY-24",
+    "title": "3DS challenge timeout too aggressive on mobile networks",
+    "serviceId": "payments-api",
+    "topicIds": [],
+    "reporter": "bea",
+    "assignee": "aria",
+    "resolvedBy": "aria",
+    "status": "resolved",
+    "createdAt": "2026-09-03T12:00:00Z",
+    "resolvedAt": "2026-09-08T09:10:00Z",
+    "body": "Conversion on mobile dropped after the 3DS change. Many challenges expire at 60 seconds while the bank app is still opening.",
+    "comments": [
+      { "author": "aria", "at": "2026-09-08T09:05:00Z", "text": "Raised the challenge window to 180 s, which is what the card schemes allow. Abandonment back to the old level in the first day." }
+    ]
+  },
+  {
+    "id": "PAY-27",
+    "title": "Rate limiter double-counts webhook replays",
+    "serviceId": "payments-api",
+    "topicIds": [],
+    "reporter": "ben",
+    "assignee": "nora",
+    "resolvedBy": null,
+    "status": "in_progress",
+    "createdAt": "2026-10-13T14:00:00Z",
+    "resolvedAt": null,
+    "body": "When a processor replays webhooks after an outage, each replay counts against the merchant's API rate limit, and some merchants get 429s on their own calls.",
+    "comments": [
+      { "author": "nora", "at": "2026-10-14T10:00:00Z", "text": "Webhook ingestion should use its own bucket. Drafting the change now." }
+    ]
+  },
+  {
+    "id": "BILL-4",
+    "title": "Invoice PDF generation stalls on accounts with 5k+ line items",
+    "serviceId": "billing-gateway",
+    "topicIds": [],
+    "reporter": "quinn",
+    "assignee": "ben",
+    "resolvedBy": "ben",
+    "status": "resolved",
+    "createdAt": "2026-10-06T08:20:00Z",
+    "resolvedAt": "2026-10-15T13:45:00Z",
+    "body": "Monthly invoice emails for the three largest accounts went out a day late. The PDF renderer runs out of memory and the job retries until the queue gives up.",
+    "comments": [
+      { "author": "ben", "at": "2026-10-07T11:00:00Z", "text": "Renderer builds the whole table in memory. Switching to paged rendering, 500 lines per page." },
+      { "author": "ben", "at": "2026-10-15T13:40:00Z", "text": "Paged renderer shipped. Largest account's invoice now renders in 9 s using 180 MB." }
+    ]
+  },
+  {
+    "id": "BILL-6",
+    "title": "Retry schedule for failed card renewals is too short",
+    "serviceId": "billing-gateway",
+    "topicIds": [],
+    "reporter": "nora",
+    "assignee": "aria",
+    "resolvedBy": "aria",
+    "status": "resolved",
+    "createdAt": "2026-09-15T09:00:00Z",
+    "resolvedAt": "2026-09-28T17:10:00Z",
+    "body": "Renewals that fail with soft declines are retried three times in 24 hours, then the subscription is cancelled. Industry practice is to spread retries over a week or more.",
+    "comments": [
+      { "author": "ben", "at": "2026-09-22T10:30:00Z", "text": "Pairing on this one. Proposed schedule: day 1, 3, 5, 7, with a dunning email before the last attempt." },
+      { "author": "aria", "at": "2026-09-28T17:05:00Z", "text": "New schedule is live behind a flag at 100%. Recovered renewals up 11% in the first week of data." }
+    ]
+  },
+  {
+    "id": "BUS-9",
+    "title": "Consumer lag on ledger-events after broker restart",
+    "serviceId": "event-bus",
+    "topicIds": ["kafka"],
+    "reporter": "omar",
+    "assignee": "vik",
+    "resolvedBy": "vik",
+    "status": "resolved",
+    "createdAt": "2026-09-12T06:40:00Z",
+    "resolvedAt": "2026-09-12T11:15:00Z",
+    "body": "Reconciliation consumer group sat at 300k lag for two hours after broker 3 was restarted. No errors, it just stopped making progress.",
+    "comments": [
+      { "author": "vik", "at": "2026-09-12T08:00:00Z", "text": "Group is stuck in PreparingRebalance; one member has a session timeout far above max.poll.interval. Asked the ledger team to restart that pod." },
+      { "author": "vik", "at": "2026-09-12T11:10:00Z", "text": "Lag cleared. Added a consumer-config lint to the deploy checks so the timeouts can't be set that far apart again." }
+    ]
+  },
+  {
+    "id": "BUS-11",
+    "title": "Upgrade Kafka brokers to 3.8",
+    "serviceId": "event-bus",
+    "topicIds": ["kafka", "kubernetes"],
+    "reporter": "vik",
+    "assignee": "wes",
+    "resolvedBy": "wes",
+    "status": "resolved",
+    "createdAt": "2026-09-16T10:00:00Z",
+    "resolvedAt": "2026-10-07T15:30:00Z",
+    "body": "We are two minor versions behind and the next security patch only ships for 3.8. Rolling upgrade, one broker per day, in the Tuesday change window.",
+    "comments": [
+      { "author": "wes", "at": "2026-09-30T14:00:00Z", "text": "Brokers 1-3 done, no under-replicated partitions during the roll." },
+      { "author": "wes", "at": "2026-10-07T15:25:00Z", "text": "All five brokers on 3.8. Inter-broker protocol bumped, clients unaffected." }
+    ]
+  },
+  {
+    "id": "BUS-14",
+    "title": "Schema registry rejects backward-compatible Avro change",
+    "serviceId": "event-bus",
+    "topicIds": ["kafka"],
+    "reporter": "jun",
+    "assignee": "wes",
+    "resolvedBy": "wes",
+    "status": "resolved",
+    "createdAt": "2026-09-04T13:30:00Z",
+    "resolvedAt": "2026-09-05T10:00:00Z",
+    "body": "Adding an optional field to FeatureUpdated is rejected by the registry even though it has a default.",
+    "comments": [
+      { "author": "wes", "at": "2026-09-05T09:55:00Z", "text": "The subject was set to FULL_TRANSITIVE by mistake when it was created. Switched to BACKWARD to match the rest of the topics; your schema registers now." }
+    ]
+  },
+  {
+    "id": "BUS-16",
+    "title": "Dead-letter topic retention set to 1 hour",
+    "serviceId": "event-bus",
+    "topicIds": ["kafka", "terraform"],
+    "reporter": "fay",
+    "assignee": "vik",
+    "resolvedBy": "vik",
+    "status": "resolved",
+    "createdAt": "2026-10-09T09:00:00Z",
+    "resolvedAt": "2026-10-10T12:00:00Z",
+    "body": "orders.dlq messages disappear before anyone can look at them. The Terraform module default for retention is 3600000 ms.",
+    "comments": [
+      { "author": "vik", "at": "2026-10-10T11:55:00Z", "text": "DLQ topics now default to 14 days in platform-modules/kafka. Applied in the change window." }
+    ]
+  },
+  {
+    "id": "SRCH-3",
+    "title": "Reindex job OOMs on catalog shard 7",
+    "serviceId": "search-index",
+    "topicIds": ["kubernetes"],
+    "reporter": "milo",
+    "assignee": "tara",
+    "resolvedBy": "tara",
+    "status": "resolved",
+    "createdAt": "2026-08-25T07:30:00Z",
+    "resolvedAt": "2026-08-27T16:00:00Z",
+    "body": "Full reindex failed three nights running. Shard 7 holds the marketplace sellers with huge variant lists and the job pod gets OOMKilled at 8 GiB.",
+    "comments": [
+      { "author": "tara", "at": "2026-08-27T15:58:00Z", "text": "Bulk requests were sized by document count, not bytes. Switched to 10 MB byte-sized batches; shard 7 reindexes at 3.1 GiB peak now." }
+    ]
+  },
+  {
+    "id": "SRCH-5",
+    "title": "Synonym file not reloaded after deploy",
+    "serviceId": "search-index",
+    "topicIds": [],
+    "reporter": "rosa",
+    "assignee": "tara",
+    "resolvedBy": "tara",
+    "status": "resolved",
+    "createdAt": "2026-09-09T11:00:00Z",
+    "resolvedAt": "2026-09-10T10:20:00Z",
+    "body": "Added 'sneakers => trainers' synonyms, deploy succeeded, but queries still don't match until a manual close/open of the index.",
+    "comments": [
+      { "author": "tara", "at": "2026-09-10T10:15:00Z", "text": "Synonyms are now in an updateable search-time filter, and the deploy step calls the reload API. No more close/open." }
+    ]
+  },
+  {
+    "id": "SRCH-8",
+    "title": "Stale results after product price change",
+    "serviceId": "search-index",
+    "topicIds": ["kafka"],
+    "reporter": "kai",
+    "assignee": "tara",
+    "resolvedBy": "tara",
+    "status": "resolved",
+    "createdAt": "2026-09-18T15:00:00Z",
+    "resolvedAt": "2026-09-22T12:30:00Z",
+    "body": "Customers see old prices in search results for up to an hour after a merchant updates them, while the product page is already correct.",
+    "comments": [
+      { "author": "tara", "at": "2026-09-19T09:00:00Z", "text": "The updater consumes catalog-updates in 5-minute micro-batches but price events were landing in the low-priority lane." },
+      { "author": "tara", "at": "2026-09-22T12:25:00Z", "text": "Price and stock events now go to the fast lane. Median staleness is 8 seconds." }
+    ]
+  },
+  {
+    "id": "SRCH-10",
+    "title": "Query latency p99 regression after analyzer change",
+    "serviceId": "search-index",
+    "topicIds": [],
+    "reporter": "sam",
+    "assignee": "tara",
+    "resolvedBy": "tara",
+    "status": "resolved",
+    "createdAt": "2026-10-07T09:00:00Z",
+    "resolvedAt": "2026-10-09T17:00:00Z",
+    "body": "p99 query latency went from 120 ms to 310 ms after the new analyzer was enabled for 10% of traffic.",
+    "comments": [
+      { "author": "tara", "at": "2026-10-08T10:00:00Z", "text": "The new analyzer emits shingles on every field, including descriptions. Limiting shingles to title and brand." },
+      { "author": "tara", "at": "2026-10-09T16:55:00Z", "text": "p99 back to 125 ms with the analyzer at 100%. Relevance metrics unchanged from the flag test." }
+    ]
+  },
+  {
+    "id": "SRCH-12",
+    "title": "Index alias swap leaves orphaned shards",
+    "serviceId": "search-index",
+    "topicIds": ["kubernetes"],
+    "reporter": "yara",
+    "assignee": "tara",
+    "resolvedBy": null,
+    "status": "in_progress",
+    "createdAt": "2026-10-13T08:00:00Z",
+    "resolvedAt": null,
+    "body": "After each blue/green reindex the old index is kept, and the cluster has 14 orphaned indices taking 1.2 TB.",
+    "comments": [
+      { "author": "tara", "at": "2026-10-14T09:30:00Z", "text": "Adding a cleanup step that deletes indices older than the previous two generations after the alias swap succeeds." }
+    ]
+  },
+  {
+    "id": "LED-41",
+    "title": "Duplicate ledger events emitted by the Kafka consumer",
+    "serviceId": "ledger-service",
+    "topicIds": ["kafka", "postgres"],
+    "reporter": "nora",
+    "assignee": "omar",
+    "resolvedBy": "omar",
+    "status": "resolved",
+    "createdAt": "2026-09-24T08:30:00Z",
+    "resolvedAt": "2026-09-30T17:00:00Z",
+    "body": "Finance found a settlement counted twice in yesterday's reconciliation. The reconciliation consumer applied the same LedgerEntryPosted events twice after a rebalance. Third occurrence this quarter.",
+    "comments": [
+      { "author": "vik", "at": "2026-09-25T09:25:00Z", "text": "The consumer commits offsets after applying the batch, so a rebalance in between replays it. Tuning helps, but the write and the publish can still disagree." },
+      { "author": "omar", "at": "2026-09-26T11:00:00Z", "text": "Short term: dedupe guard keyed on entry id in the consumer. Long term I want the ledger write and the event in one Postgres transaction with an outbox." },
+      { "author": "omar", "at": "2026-09-30T16:58:00Z", "text": "Dedupe guard shipped and the duplicate settlement was reversed. Outbox proposal is going into ADR-012." }
+    ]
+  },
+  {
+    "id": "LED-44",
+    "title": "Outbox relay backlog alert thresholds",
+    "serviceId": "ledger-service",
+    "topicIds": ["postgres"],
+    "reporter": "omar",
+    "assignee": "omar",
+    "resolvedBy": null,
+    "status": "open",
+    "createdAt": "2026-10-09T10:00:00Z",
+    "resolvedAt": null,
+    "body": "With ADR-012 the relay publishes from the outbox table. We need an alert on the age of the oldest unsent row and a retention job for sent rows.",
+    "comments": []
+  },
+  {
+    "id": "INFRA-20",
+    "title": "Terraform state lock stuck on prod workspace",
+    "serviceId": "infra-k8s",
+    "topicIds": ["terraform"],
+    "reporter": "eli",
+    "assignee": "gus",
+    "resolvedBy": "gus",
+    "status": "resolved",
+    "createdAt": "2026-08-28T13:00:00Z",
+    "resolvedAt": "2026-08-28T14:10:00Z",
+    "body": "A CI job was cancelled mid-apply and the prod state is still locked. Every plan fails with 'Error acquiring the state lock'.",
+    "comments": [
+      { "author": "gus", "at": "2026-08-28T14:05:00Z", "text": "Confirmed no apply is running, force-unlocked, ran a clean plan with no drift. CI now runs applies with a lock timeout and a cleanup step on cancel." }
+    ]
+  },
+  {
+    "id": "INFRA-22",
+    "title": "Node pool autoscaler not scaling down",
+    "serviceId": "infra-k8s",
+    "topicIds": ["kubernetes", "terraform"],
+    "reporter": "wes",
+    "assignee": "eli",
+    "resolvedBy": "eli",
+    "status": "resolved",
+    "createdAt": "2026-09-30T10:00:00Z",
+    "resolvedAt": "2026-10-06T12:00:00Z",
+    "body": "General pool sits at 38 nodes overnight even though utilisation is under 20%.",
+    "comments": [
+      { "author": "eli", "at": "2026-10-02T09:00:00Z", "text": "Several pods use local emptyDir without the safe-to-evict annotation, so the autoscaler won't drain their nodes." },
+      { "author": "eli", "at": "2026-10-06T11:55:00Z", "text": "Annotations added via the Helm defaults, scale-down delay set to 15 min in the Terraform module. Overnight count is now 17 nodes." }
+    ]
+  },
+  {
+    "id": "INFRA-25",
+    "title": "Rotate cluster CA before expiry",
+    "serviceId": "infra-k8s",
+    "topicIds": ["kubernetes"],
+    "reporter": "dina",
+    "assignee": "gus",
+    "resolvedBy": "gus",
+    "status": "resolved",
+    "createdAt": "2026-09-21T09:00:00Z",
+    "resolvedAt": "2026-10-01T18:00:00Z",
+    "body": "The production cluster CA expires on 2026-10-20. Nobody had it on a calendar; security's certificate scan found it.",
+    "comments": [
+      { "author": "gus", "at": "2026-09-23T10:00:00Z", "text": "Plan: rotate in staging first, then prod in two Tuesday windows (control plane, then kubelets)." },
+      { "author": "gus", "at": "2026-10-01T17:55:00Z", "text": "Rotation finished in prod. New CA valid to 2031. Added expiry checks for every cluster cert to the alerting." }
+    ]
+  },
+  {
+    "id": "INFRA-27",
+    "title": "Ingress controller 502s during rolling deploys",
+    "serviceId": "infra-k8s",
+    "topicIds": ["kubernetes"],
+    "reporter": "tara",
+    "assignee": "eli",
+    "resolvedBy": "eli",
+    "status": "resolved",
+    "createdAt": "2026-10-10T07:45:00Z",
+    "resolvedAt": "2026-10-13T15:00:00Z",
+    "body": "Every deploy of the search API produces a short burst of 502s from the ingress, about 0.3% of requests for 20 seconds.",
+    "comments": [
+      { "author": "eli", "at": "2026-10-13T14:55:00Z", "text": "Pods were removed from endpoints after SIGTERM, not before. Added a preStop sleep of 10 s and connection draining on the ingress. No 502s in the last three deploys." }
+    ]
+  },
+  {
+    "id": "ML-30",
+    "title": "Fraud model drift alert firing every weekend",
+    "serviceId": "ml-pipeline",
+    "topicIds": ["fraud-models"],
+    "reporter": "aria",
+    "assignee": "hana",
+    "resolvedBy": "hana",
+    "status": "resolved",
+    "createdAt": "2026-09-14T08:00:00Z",
+    "resolvedAt": "2026-09-18T14:00:00Z",
+    "body": "FraudModelDrift pages every Saturday and Sunday. No change in fraud rates, so it looks like the alert, not the model.",
+    "comments": [
+      { "author": "hana", "at": "2026-09-18T13:55:00Z", "text": "PSI was computed against a weekday baseline. Baselines are now per day-of-week. Last two weekends had no false pages in replay." }
+    ]
+  },
+  {
+    "id": "ML-33",
+    "title": "Retrain fraud model with chargeback labels",
+    "serviceId": "ml-pipeline",
+    "topicIds": ["fraud-models"],
+    "reporter": "cora",
+    "assignee": "ivan",
+    "resolvedBy": "ivan",
+    "status": "resolved",
+    "createdAt": "2026-09-08T10:00:00Z",
+    "resolvedAt": "2026-10-04T12:00:00Z",
+    "body": "The model trains on manual review outcomes only. Chargebacks arrive 30-90 days later but are the better label. Join them in and retrain.",
+    "comments": [
+      { "author": "ivan", "at": "2026-09-24T15:00:00Z", "text": "Label join done with a 90-day maturity window; training set is 18% smaller but cleaner." },
+      { "author": "ivan", "at": "2026-10-04T11:55:00Z", "text": "New model promoted after 72 h shadow scoring. AUC +0.03 on holdout, false positives down 9% at the same recall." }
+    ]
+  },
+  {
+    "id": "ML-35",
+    "title": "Backfill merchant velocity features for 2025",
+    "serviceId": "feature-store",
+    "topicIds": ["fraud-models"],
+    "reporter": "hana",
+    "assignee": "jun",
+    "resolvedBy": "jun",
+    "status": "resolved",
+    "createdAt": "2026-09-11T09:00:00Z",
+    "resolvedAt": "2026-09-19T16:30:00Z",
+    "body": "The retrain in ML-33 needs merchant velocity features going back to January 2025, but the offline copy only starts in March 2026.",
+    "comments": [
+      { "author": "jun", "at": "2026-09-19T16:25:00Z", "text": "Backfilled from the raw payment events in the warehouse. Verification sampled 1% of keys, 0.02% mismatch from late refunds, which is expected." }
+    ]
+  },
+  {
+    "id": "ML-37",
+    "title": "Shadow-score candidate fraud model on checkout traffic",
+    "serviceId": "ml-pipeline",
+    "topicIds": ["fraud-models"],
+    "reporter": "ivan",
+    "assignee": "hana",
+    "resolvedBy": null,
+    "status": "in_progress",
+    "createdAt": "2026-10-12T09:00:00Z",
+    "resolvedAt": null,
+    "body": "The device-signal candidate needs at least a week of shadow scores on real checkout traffic before we compare it with production.",
+    "comments": [
+      { "author": "hana", "at": "2026-10-14T16:00:00Z", "text": "Shadow scoring is running at 100% of traffic since this morning. First comparison on 2026-10-21." }
+    ]
+  },
+  {
+    "id": "NOTIF-7",
+    "title": "Push notification delivery delays on Android",
+    "serviceId": "notification-service",
+    "topicIds": [],
+    "reporter": "bea",
+    "assignee": "pia",
+    "resolvedBy": null,
+    "status": "in_progress",
+    "createdAt": "2026-10-08T12:00:00Z",
+    "resolvedAt": null,
+    "body": "Order-shipped pushes reach Android devices 5 to 20 minutes late, iOS is fine. Started after the 5.12 mobile release went to staged rollout.",
+    "comments": [
+      { "author": "pia", "at": "2026-10-09T10:00:00Z", "text": "We send with normal priority, and Android batches those under Doze. Testing high priority for transactional pushes only." },
+      { "author": "bea", "at": "2026-10-11T09:15:00Z", "text": "Quinn is taking over notification-service, so please loop him in on anything new here." },
+      { "author": "quinn", "at": "2026-10-13T11:00:00Z", "text": "Following along. High-priority test on 5% of Android devices shows median delay under 4 seconds." }
+    ]
+  },
+  {
+    "id": "NOTIF-9",
+    "title": "Email template rendering breaks with emoji in subject",
+    "serviceId": "notification-service",
+    "topicIds": [],
+    "reporter": "quinn",
+    "assignee": "pia",
+    "resolvedBy": "pia",
+    "status": "resolved",
+    "createdAt": "2026-09-17T14:00:00Z",
+    "resolvedAt": "2026-09-19T10:00:00Z",
+    "body": "Marketing's subject line with an emoji shows up as question marks in Outlook.",
+    "comments": [
+      { "author": "pia", "at": "2026-09-19T09:55:00Z", "text": "Subjects were not RFC 2047 encoded. Now encoded as UTF-8 B-words; tested in Outlook, Gmail and Apple Mail." }
+    ]
+  },
+  {
+    "id": "IAM-5",
+    "title": "Sessions not revoked on password reset",
+    "serviceId": "identity-service",
+    "topicIds": ["pci-compliance"],
+    "reporter": "felix",
+    "assignee": "uma",
+    "resolvedBy": "uma",
+    "status": "resolved",
+    "createdAt": "2026-08-31T09:00:00Z",
+    "resolvedAt": "2026-09-04T17:00:00Z",
+    "body": "After a password reset, existing refresh tokens keep working for up to 30 days. Found during the internal pen test.",
+    "comments": [
+      { "author": "uma", "at": "2026-09-04T16:55:00Z", "text": "Password reset now bumps the user's token generation, and refresh checks it. All other sessions are revoked immediately. Regression test added." }
+    ]
+  },
+  {
+    "id": "IAM-8",
+    "title": "SAML metadata refresh fails silently",
+    "serviceId": "identity-service",
+    "topicIds": [],
+    "reporter": "cal",
+    "assignee": "gwen",
+    "resolvedBy": "gwen",
+    "status": "resolved",
+    "createdAt": "2026-10-02T09:00:00Z",
+    "resolvedAt": "2026-10-05T12:00:00Z",
+    "body": "An enterprise customer rotated their IdP signing cert and SSO broke for them. Our metadata refresh had been failing for a week without an alert.",
+    "comments": [
+      { "author": "gwen", "at": "2026-10-05T11:55:00Z", "text": "Refresh errors now raise an alert per connection, and we keep the previous cert valid for 72 h during rotation." }
+    ]
+  },
+  {
+    "id": "DWH-3",
+    "title": "Nightly warehouse load misses late-arriving events",
+    "serviceId": "analytics-warehouse",
+    "topicIds": ["kafka"],
+    "reporter": "lena",
+    "assignee": "dev",
+    "resolvedBy": "dev",
+    "status": "resolved",
+    "createdAt": "2026-09-22T08:00:00Z",
+    "resolvedAt": "2026-09-26T15:00:00Z",
+    "body": "Daily revenue in BI is 0.4% lower than finance's numbers. The nightly load cuts off at midnight and events that arrive a few minutes late are never picked up.",
+    "comments": [
+      { "author": "dev", "at": "2026-09-26T14:55:00Z", "text": "Load now waits 30 minutes past midnight and re-merges the previous two days. BI and finance match to the cent for the last four days." }
+    ]
+  },
+  {
+    "id": "CHK-14",
+    "title": "Checkout form double-submits on slow networks",
+    "serviceId": "checkout-web",
+    "topicIds": [],
+    "reporter": "zane",
+    "assignee": "kai",
+    "resolvedBy": "kai",
+    "status": "resolved",
+    "createdAt": "2026-09-29T10:00:00Z",
+    "resolvedAt": "2026-10-02T13:00:00Z",
+    "body": "On 3G throttling, tapping 'Pay' twice creates two payment intents. The second one is declined, but customers see a scary error.",
+    "comments": [
+      { "author": "kai", "at": "2026-10-02T12:55:00Z", "text": "Button disables on first submit and the client sends a stable idempotency key per checkout session, so a second request returns the first result." }
+    ]
+  },
+  {
+    "id": "MOB-2",
+    "title": "Mobile app crashes on card scan with Android 11",
+    "serviceId": "mobile-app",
+    "topicIds": [],
+    "reporter": "bea",
+    "assignee": "zane",
+    "resolvedBy": "zane",
+    "status": "resolved",
+    "createdAt": "2026-10-03T09:00:00Z",
+    "resolvedAt": "2026-10-07T16:00:00Z",
+    "body": "Crash reports from 5.12 beta: opening the card scanner crashes on Android 11 devices, about 2% of beta sessions.",
+    "comments": [
+      { "author": "zane", "at": "2026-10-07T15:55:00Z", "text": "Camera permission callback ran after the fragment was detached. Guarded it and added a fallback to manual entry. Fixed in 5.12.1." }
+    ]
+  }
+]

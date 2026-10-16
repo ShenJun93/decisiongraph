@@ -1,0 +1,48 @@
+{
+  "company": "Larkspur Systems",
+  "teams": [
+    { "id": "payments", "name": "Payments", "leadId": "nora" },
+    { "id": "platform", "name": "Platform", "leadId": "fay" },
+    { "id": "data", "name": "Data", "leadId": "lena" },
+    { "id": "search", "name": "Search", "leadId": "milo" },
+    { "id": "growth", "name": "Growth", "leadId": "bea" },
+    { "id": "security", "name": "Security", "leadId": "dina" }
+  ],
+  "people": [
+    { "id": "nora", "name": "Nora Castillo", "teamId": "payments", "role": "Engineering Lead, Payments", "managerId": null },
+    { "id": "aria", "name": "Aria Okafor", "teamId": "payments", "role": "Staff Engineer", "managerId": "nora" },
+    { "id": "ben", "name": "Ben Hartley", "teamId": "payments", "role": "Senior Engineer", "managerId": "nora" },
+    { "id": "cora", "name": "Cora Lindqvist", "teamId": "payments", "role": "Senior Engineer, Risk & ML", "managerId": "nora" },
+    { "id": "omar", "name": "Omar Haddad", "teamId": "payments", "role": "Senior Engineer, Ledger", "managerId": "nora" },
+
+    { "id": "fay", "name": "Fay Morrison", "teamId": "platform", "role": "Engineering Lead, Platform", "managerId": null },
+    { "id": "gus", "name": "Gus Delgado", "teamId": "platform", "role": "Staff SRE", "managerId": "fay" },
+    { "id": "vik", "name": "Vik Sharma", "teamId": "platform", "role": "Senior Engineer, Streaming", "managerId": "fay" },
+    { "id": "wes", "name": "Wes Calder", "teamId": "platform", "role": "Engineer, Streaming", "managerId": "fay" },
+    { "id": "eli", "name": "Eli Brandt", "teamId": "platform", "role": "SRE", "managerId": "fay" },
+
+    { "id": "lena", "name": "Lena Fischer", "teamId": "data", "role": "Engineering Lead, Data", "managerId": null },
+    { "id": "jun", "name": "Jun Park", "teamId": "data", "role": "Senior Data Engineer", "managerId": "lena" },
+    { "id": "dev", "name": "Dev Mehta", "teamId": "data", "role": "Data Engineer", "managerId": "lena" },
+    { "id": "hana", "name": "Hana Sato", "teamId": "data", "role": "Machine Learning Engineer", "managerId": "lena" },
+    { "id": "ivan", "name": "Ivan Petrov", "teamId": "data", "role": "Data Scientist, Fraud", "managerId": "lena" },
+
+    { "id": "milo", "name": "Milo Ward", "teamId": "search", "role": "Engineering Lead, Search", "managerId": null },
+    { "id": "tara", "name": "Tara Bose", "teamId": "search", "role": "Senior Engineer, Search Infrastructure", "managerId": "milo" },
+    { "id": "rosa", "name": "Rosa Alvarez", "teamId": "search", "role": "Engineer, Relevance", "managerId": "milo" },
+    { "id": "sam", "name": "Sam Whitaker", "teamId": "search", "role": "Engineer, Search Performance", "managerId": "milo" },
+    { "id": "yara", "name": "Yara Nasser", "teamId": "search", "role": "Product Engineer, Search", "managerId": "milo" },
+
+    { "id": "bea", "name": "Bea Turner", "teamId": "growth", "role": "Engineering Lead, Growth", "managerId": null },
+    { "id": "kai", "name": "Kai Nakamura", "teamId": "growth", "role": "Senior Frontend Engineer", "managerId": "bea" },
+    { "id": "pia", "name": "Pia Andersen", "teamId": "growth", "role": "Senior Engineer, Messaging", "managerId": "bea" },
+    { "id": "quinn", "name": "Quinn Doyle", "teamId": "growth", "role": "Engineer, Messaging", "managerId": "bea" },
+    { "id": "zane", "name": "Zane Holloway", "teamId": "growth", "role": "Mobile Engineer", "managerId": "bea" },
+
+    { "id": "dina", "name": "Dina Kowalski", "teamId": "security", "role": "Engineering Lead, Security", "managerId": null },
+    { "id": "uma", "name": "Uma Raman", "teamId": "security", "role": "Staff Security Engineer, Identity", "managerId": "dina" },
+    { "id": "cal", "name": "Cal Rivers", "teamId": "security", "role": "Security Engineer", "managerId": "dina" },
+    { "id": "felix", "name": "Felix Grant", "teamId": "security", "role": "Application Security Engineer", "managerId": "dina" },
+    { "id": "gwen", "name": "Gwen Ashby", "teamId": "security", "role": "Compliance Engineer, PCI", "managerId": "dina" }
+  ]
+}

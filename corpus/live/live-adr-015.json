@@ -1,0 +1,9 @@
+{
+  "id": "live-adr-015",
+  "format": "doc",
+  "kind": "adr",
+  "title": "ADR-015: Move the ledger outbox relay to managed change data capture",
+  "author": "omar",
+  "date": "2026-10-16T10:00:00Z",
+  "text": "# ADR-015: Move the ledger outbox relay to managed change data capture\n\n- Status: Accepted\n- Decided by: Omar\n- Date: 2026-10-16\n- Affected services: ledger-service\n- Supersedes: ADR-012\n\n## Context\n\nADR-012 introduced a Postgres transactional outbox for ledger events with a hand-written relay that polls the outbox table. In the first two weeks the relay needed two hotfixes (ordering after a failover, and a stuck batch when a row exceeded the message size limit), and LED-44 showed we would also have to build backlog alerting and retention ourselves.\n\n## Decision\n\nWe keep the outbox table, but replace the hand-written relay with a managed change data capture connector that reads the outbox from the Postgres write-ahead log and publishes to the existing ledger-events topic. The ledger service write path does not change.\n\n## Consequences\n\n- Ordering and failover handling come from the connector instead of our own code.\n- Backlog and lag metrics come from the connector, which replaces most of LED-44.\n- Requires logical replication on the ledger database and a replication slot that must be monitored for growth.\n"
+}

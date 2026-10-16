@@ -1,123 +1,103 @@
-// Graph-first, fail-closed human-review draft. Pure selection logic is separately tested.
-// A deterministic decision workflow is NOT advertised as an LLM agent.
+// Ownership policy. A parameterized Cypher query reads every ownership claim about a service with
+// its source and quote; this pure function then names an owner or abstains. Nothing here trusts a
+// model: the model only chose which service or project to ask about.
+import {MIN_NAMING_AUTHORITY, validTime} from "./corpus.mjs";
+
 export const MAX_EVIDENCE_ROWS = 50;
-// Preserve every service and ownership claim in the query, including rows with
-// missing owners/sources. Silent inner joins can hide contradictory evidence.
-export const LOOKUP_CYPHER = `
-MATCH (project:Project {id: $projectId})-[:USES]->(service:Service)
-OPTIONAL MATCH (claim:OwnershipClaim)-[:ABOUT]->(service)
-OPTIONAL MATCH (source:Source)-[:ATTESTS]->(claim)
+
+// OPTIONAL MATCH keeps claims whose source or owner is missing, so the policy sees the gap and
+// abstains instead of silently choosing from the remaining rows.
+export const OWNER_CYPHER = `
+MATCH (svc:Service {id: $serviceId})
+OPTIONAL MATCH (claim:OwnershipClaim)-[:ABOUT]->(svc)
+OPTIONAL MATCH (src:Source)-[att:ATTESTS]->(claim)
 OPTIONAL MATCH (claim)-[:NAMES_OWNER]->(owner:Person)
-RETURN project.id AS projectId, service.id AS serviceId,
+RETURN svc.id AS serviceId, svc.name AS serviceName,
        claim.id AS claimId, claim.effectiveAt AS effectiveAt,
-       source.id AS sourceId, source.rank AS sourceRank,
-       owner.id AS ownerId, owner.name AS ownerName
-ORDER BY source.rank DESC, claim.effectiveAt DESC
-LIMIT 50
+       src.id AS sourceId, src.kind AS sourceKind, src.title AS sourceTitle, src.authority AS authority,
+       att.quote AS quote, owner.id AS ownerId, owner.name AS ownerName
+LIMIT ${MAX_EVIDENCE_ROWS}
 `.trim();
 
-export function validId(s) {
-  return typeof s === "string" && /^[a-z0-9][a-z0-9-]{0,47}$/.test(s);
-}
+export const PROJECT_SERVICES_CYPHER =
+  "MATCH (p:Project {id: $projectId})-[:USES]->(s:Service) RETURN p.name AS projectName, s.id AS serviceId ORDER BY s.id";
 
-function abstain(projectId, asOf, reason, extra = {}) {
-  return {
-    status: "ABSTAIN", reason, projectId, asOf,
-    proposedAction: null, authorizedExternalActions: false, ...extra
-  };
-}
+export const validId = s => typeof s === "string" && /^[a-z0-9][a-z0-9-]{0,47}$/.test(s);
 
-function validTime(s) {
-  if (typeof s !== "string") return false;
-  const ms = Date.parse(s);
-  return Number.isFinite(ms) && /^\d{4}-\d{2}-\d{2}T/.test(s);
-}
+const abstain = (serviceId, asOf, reason, extra = {}) =>
+  ({status: "ABSTAIN", reason, serviceId, asOf, ...extra});
 
-export function resolveEvidence(rows, {projectId = "orion", asOf = "2026-10-14T20:00:00.000Z"} = {}) {
-  if (!validId(projectId) || !validTime(asOf)) return abstain(projectId, asOf, "INVALID_INPUT");
-  if (!Array.isArray(rows)) return abstain(projectId, asOf, "INVALID_GRAPH_RESPONSE");
-  if (!rows.length) return abstain(projectId, asOf, "NO_GRAPH_EVIDENCE");
-  // The Cypher result is capped. At the cap we cannot prove an equal-authority
-  // conflicting claim was not omitted: fail closed instead of picking a winner.
-  if (rows.length >= MAX_EVIDENCE_ROWS) return abstain(projectId, asOf, "EVIDENCE_RESULT_LIMIT");
+const evidenceRow = r => ({claimId: r.claimId, ownerId: r.ownerId, ownerName: r.ownerName, sourceId: r.sourceId,
+  sourceKind: r.sourceKind, sourceTitle: r.sourceTitle, authority: Number(r.authority), effectiveAt: r.effectiveAt,
+  quote: r.quote});
+
+/** Pure policy over the rows of OWNER_CYPHER. */
+export function resolveOwner(rows, {serviceId, asOf}) {
+  if (!validId(serviceId) || !validTime(asOf)) return abstain(serviceId, asOf, "INVALID_INPUT");
+  if (!Array.isArray(rows) || !rows.length) return abstain(serviceId, asOf, "UNKNOWN_SERVICE");
+  // At the cap a conflicting claim may have been cut off: refuse rather than pick.
+  if (rows.length >= MAX_EVIDENCE_ROWS) return abstain(serviceId, asOf, "EVIDENCE_RESULT_LIMIT");
+  const serviceName = rows[0].serviceName;
+  const claims = rows.filter(r => r.claimId != null);
+  if (!claims.length) return abstain(serviceId, asOf, "NO_GRAPH_EVIDENCE", {serviceName});
   const atMs = Date.parse(asOf);
-  const normalized = [];
-  for (const r of rows) {
-    if (!r || r.projectId !== projectId || !validId(r.serviceId) ||
-        !validId(r.claimId) || !validId(r.sourceId) || !validId(r.ownerId) ||
-        typeof r.ownerName !== "string" || !r.ownerName.trim() ||
-        !validTime(r.effectiveAt) ||
-        r.sourceRank === null || r.sourceRank === undefined || r.sourceRank === "" ||
-        !Number.isInteger(Number(r.sourceRank)) ||
-        Number(r.sourceRank) < 0 || Number(r.sourceRank) > 100) {
-      return abstain(projectId, asOf, "INCOMPLETE_GRAPH_PROVENANCE");
+  const valid = [];
+  for (const r of claims) {
+    const rank = Number(r.authority);
+    if (r.sourceId == null || r.ownerId == null || !validTime(r.effectiveAt) ||
+        r.authority == null || !Number.isInteger(rank) || rank < 0 || rank > 100) {
+      return abstain(serviceId, asOf, "INCOMPLETE_GRAPH_PROVENANCE", {serviceName, broken: r.claimId});
     }
-    if (Date.parse(r.effectiveAt) > atMs) continue; // Future claims cannot decide a current release.
-    normalized.push({
-      projectId, serviceId: r.serviceId, claimId: r.claimId,
-      sourceId: r.sourceId, sourceRank: Number(r.sourceRank),
-      effectiveAt: r.effectiveAt, ownerId: r.ownerId, ownerName: r.ownerName
-    });
+    if (Date.parse(r.effectiveAt) > atMs) continue; // not yet in effect at asOf
+    valid.push(evidenceRow(r));
   }
-  if (!normalized.length) return abstain(projectId, asOf, "NO_CURRENT_EVIDENCE");
-  const services = [...new Set(normalized.map(r => r.serviceId))];
-  if (services.length !== 1) return abstain(projectId, asOf, "AMBIGUOUS_PROJECT_SERVICE");
-  normalized.sort((a, b) => b.sourceRank - a.sourceRank ||
-      Date.parse(b.effectiveAt) - Date.parse(a.effectiveAt) ||
-      a.claimId.localeCompare(b.claimId));
-  const winner = normalized[0];
-  // Different valid timezone offsets can represent the same instant.
-  // Compare parsed instants, not raw timestamp strings, for authority ties.
-  const winnerMs = Date.parse(winner.effectiveAt);
-  const coequal = normalized.filter(r =>
-    r.sourceRank === winner.sourceRank && Date.parse(r.effectiveAt) === winnerMs);
-  if (new Set(coequal.map(r => r.ownerId)).size > 1) {
-    return abstain(projectId, asOf, "UNRESOLVED_EQUAL_AUTHORITY_CONFLICT", {
-      competing: coequal.map(r => ({
-        ownerId: r.ownerId, sourceId: r.sourceId, claimId: r.claimId,
-        authority: r.sourceRank, effectiveAt: r.effectiveAt
-      }))
-    });
+  if (!valid.length) return abstain(serviceId, asOf, "NO_EVIDENCE_AT_THAT_TIME", {serviceName});
+  valid.sort((a, b) => b.authority - a.authority || Date.parse(b.effectiveAt) - Date.parse(a.effectiveAt) ||
+    a.claimId.localeCompare(b.claimId));
+  const winner = valid[0];
+  const evidence = valid;
+  if (winner.authority < MIN_NAMING_AUTHORITY) {
+    return abstain(serviceId, asOf, "LOW_AUTHORITY_ONLY", {serviceName, evidence});
   }
-  const rejected = normalized.filter(r => r.ownerId !== winner.ownerId).map(r => ({
-    ownerId: r.ownerId, sourceId: r.sourceId, claimId: r.claimId,
-    authority: r.sourceRank, effectiveAt: r.effectiveAt
-  }));
+  // Same authority and the same instant (timestamps compared as instants, not strings).
+  const tied = valid.filter(r => r.authority === winner.authority && Date.parse(r.effectiveAt) === Date.parse(winner.effectiveAt));
+  if (new Set(tied.map(r => r.ownerId)).size > 1) {
+    return abstain(serviceId, asOf, "UNRESOLVED_EQUAL_AUTHORITY_CONFLICT", {serviceName, competing: tied, evidence});
+  }
   return {
-    status: "HUMAN_REVIEW_DRAFT", projectId, asOf,
-    serviceId: winner.serviceId,
-    currentOwner: {id: winner.ownerId, name: winner.ownerName},
-    basis: {
-      claimId: winner.claimId, sourceId: winner.sourceId,
-      authority: winner.sourceRank, effectiveAt: winner.effectiveAt,
-      path: [
-        `Project:${projectId} -USES-> Service:${winner.serviceId}`,
-        `OwnershipClaim:${winner.claimId} -ABOUT-> Service:${winner.serviceId}`,
-        `Source:${winner.sourceId} -ATTESTS-> OwnershipClaim:${winner.claimId}`,
-        `OwnershipClaim:${winner.claimId} -NAMES_OWNER-> Person:${winner.ownerId}`
-      ]
-    },
-    contradictoryEvidence: rejected,
-    proposedAction: {
-      type: "DRAFT_HUMAN_REVIEW_TASK",
-      summary: `Ask ${winner.ownerName} to review release of project ${projectId}; do not auto-approve.`,
-      status: "DRAFT_ONLY", requiresHumanApproval: true
-    },
-    authorizedExternalActions: false
+    status: "OWNER", serviceId, serviceName, asOf,
+    owner: {id: winner.ownerId, name: winner.ownerName},
+    basis: winner,
+    outranked: valid.filter(r => r.claimId !== winner.claimId),
+    path: [
+      {from: `Source:${winner.sourceId}`, rel: "ATTESTS", to: "OwnershipClaim"},
+      {from: "OwnershipClaim", rel: "ABOUT", to: `Service:${serviceId}`},
+      {from: "OwnershipClaim", rel: "NAMES_OWNER", to: `Person:${winner.ownerId}`}
+    ]
   };
 }
 
-export async function decideFromGraph(graph, {projectId = "orion", asOf = new Date().toISOString()} = {}) {
-  if (!validId(projectId) || !validTime(asOf)) return abstain(projectId, asOf, "INVALID_INPUT");
+export async function ownerOfService(graph, {serviceId, asOf}) {
+  if (!validId(serviceId) || !validTime(asOf)) return abstain(serviceId, asOf, "INVALID_INPUT");
   try {
-    const reply = await graph.query(LOOKUP_CYPHER, {params: {projectId}});
-    const rows = Array.isArray(reply) ? reply
-      : (Array.isArray(reply?.data) ? reply.data : reply?.rows);
-    return resolveEvidence(rows, {projectId, asOf});
+    const reply = await graph.query(OWNER_CYPHER, {params: {serviceId}});
+    return resolveOwner(reply?.data ?? reply, {serviceId, asOf});
   } catch (err) {
-    return abstain(projectId, asOf, "GRAPH_UNAVAILABLE", {
-      // Never turn graph failure into an LLM/hard-coded confident answer.
-      diagnostic: String(err?.code || err?.name || "GRAPH_QUERY_ERROR")
-    });
+    return abstain(serviceId, asOf, "GRAPH_UNAVAILABLE", {diagnostic: String(err?.code || err?.name || "GRAPH_QUERY_ERROR")});
   }
+}
+
+/** A project answer is one decision per service it uses; it never collapses conflicts into one name. */
+export async function ownerOfProject(graph, {projectId, asOf}) {
+  const empty = reason => ({kind: "owner", status: "ABSTAIN", reason, projectId, asOf, services: []});
+  if (!validId(projectId) || !validTime(asOf)) return empty("INVALID_INPUT");
+  let rows;
+  try { rows = (await graph.query(PROJECT_SERVICES_CYPHER, {params: {projectId}}))?.data || []; }
+  catch { return empty("GRAPH_UNAVAILABLE"); }
+  if (!rows.length) return empty("UNKNOWN_PROJECT");
+  const services = [];
+  for (const r of rows) services.push(await ownerOfService(graph, {serviceId: r.serviceId, asOf}));
+  const named = services.filter(s => s.status === "OWNER").length;
+  return {kind: "owner", projectId, projectName: rows[0].projectName, asOf, services,
+    status: named === services.length ? "OWNER" : named ? "PARTIAL" : "ABSTAIN"};
 }
