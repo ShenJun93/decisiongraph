@@ -27,6 +27,10 @@ try {
   agentInfo.error = String(e.message).slice(0, 120); // config problem only; never includes the key
 }
 const corpus = loadCorpus();
+const cachedLive = (() => {
+  try { return JSON.parse(readFileSync(new URL("../corpus/extracted.json", import.meta.url), "utf8")).live || {}; }
+  catch { return {}; }
+})();
 const LIVE_KINDS = ["chat", "change-control", "wiki", "ticket"];
 
 function send(res, status, body, type = "application/json") {
@@ -82,7 +86,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/overview") {
       const stats = await graphStats(gateway.graph);
       const e = await loadEntities(gateway.graph);
-      return send(res, 200, {stats, questions: DEMO_QUESTIONS, authority: AUTHORITY,
+      return send(res, 200, {stats, questions: DEMO_QUESTIONS, authority: AUTHORITY, offline: Boolean(agentModel?.offline),
         people: e.people, live: corpus.live.map(i => ({id: i.id, format: i.format, kind: i.kind || "chat",
           author: i.author, title: i.title || i.channel, text: i.text})), liveKinds: LIVE_KINDS});
     }
@@ -94,16 +98,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/live") {
       const data = await parseJson(req);
       if (!agentModel) return send(res, 503, {error: "MODEL_NOT_CONFIGURED"});
+      if (agentModel.offline && !data?.itemId) return send(res, 400, {error: "Custom records need a model (offline mode)"});
       const item = data?.itemId ? corpus.live.find(i => i.id === data.itemId) : customItem(data?.custom);
       if (!item || !validSourceId(item.id)) return send(res, 400, {error: "UNKNOWN_ITEM"});
       return exclusive(res, async () => {
         const src = liveSource(item);
-        const facts = await extractSource(agentModel, src, corpus);
+        // Offline mode replays the facts Nemotron extracted for this record during `npm run ingest`.
+        const facts = agentModel.offline ? (cachedLive[src.id] || {ownership: [], decisions: [], rejected: [], error: "NOT_CACHED"})
+          : await extractSource(agentModel, src, corpus);
         if (facts.error) return {source: {id: src.id}, facts, written: false};
         const counts = await writeSources(gateway.graph, [src], {[src.id]: facts}, corpus);
         await deriveEdges(gateway.graph);
-        return {source: {id: src.id, kind: src.kind, authority: src.authority, title: src.title, author: src.author, at: src.at},
-          facts, written: true, counts};
+        return {source: {id: src.id, kind: src.kind, authority: src.authority, title: src.title, author: src.author, at: src.at,
+          simulated: !data?.itemId}, facts, written: true, counts, replayed: Boolean(agentModel.offline)};
       });
     }
     if (req.method === "POST" && url.pathname === "/api/reset") {

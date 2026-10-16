@@ -52,7 +52,8 @@ footer{margin-top:22px;color:var(--dim);font-size:13px}
 <div class="card" id="livecard"><h3>Keep it current: add a new record</h3>
 <div class="muted">A new record goes through the same pipeline: Nemotron extracts facts, code checks each quote against the text, and the graph is updated. Then ask again.</div>
 <div class="live" id="live" style="margin-top:12px"></div>
-<div class="custom"><select id="ckind"></select><select id="cauthor"></select><textarea id="ctext" maxlength="1500" placeholder="Or write your own record, e.g. From today Rosa owns the search index."></textarea><button id="cgo">Add</button></div>
+<div class="muted" style="margin-top:12px">Or type a record yourself (a simulation: you choose its kind, so you choose its authority).</div>
+<div class="custom"><select id="ckind"></select><select id="cauthor"></select><textarea id="ctext" maxlength="1500" placeholder="e.g. Ownership of the search index is assigned to Rosa, effective immediately."></textarea><button id="cgo">Add</button></div>
 <div id="liveout" style="margin-top:12px"></div>
 <div style="margin-top:10px"><button id="reset">Reset graph to the original corpus</button></div>
 </div>
@@ -62,7 +63,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
 const first=s=>String(s||"").split(/\s+/)[0];
 const day=s=>String(s||"").slice(0,10);
-const REASON={UNRESOLVED_EQUAL_AUTHORITY_CONFLICT:"Equally authoritative records name different owners for the same moment",LOW_AUTHORITY_ONLY:"Only low-authority sources (chat or wiki) name an owner",NO_GRAPH_EVIDENCE:"No record names an owner",NO_EVIDENCE_AT_THAT_TIME:"No record named an owner at that time",INCOMPLETE_GRAPH_PROVENANCE:"A claim has no attesting source",AMBIGUOUS_TIME:"The time in the question is too vague",FUTURE_TIME:"The graph cannot know the future",NOT_IN_GRAPH:"The question names nothing the graph knows",OUT_OF_SCOPE:"Out of scope",GRAPH_UNAVAILABLE:"Graph unavailable",MODEL_UNAVAILABLE:"Model unavailable"};
+const REASON={SUBJECT_MISMATCH:"The model picked a subject the question does not name, so the answer was refused",UNRESOLVED_EQUAL_AUTHORITY_CONFLICT:"Equally authoritative records name different owners for the same moment",LOW_AUTHORITY_ONLY:"Only low-authority sources (chat or wiki) name an owner",NO_GRAPH_EVIDENCE:"No record names an owner",NO_EVIDENCE_AT_THAT_TIME:"No record named an owner at that time",INCOMPLETE_GRAPH_PROVENANCE:"A claim has no attesting source",AMBIGUOUS_TIME:"The time in the question is too vague",FUTURE_TIME:"The graph cannot know the future",NOT_IN_GRAPH:"The question names nothing the graph knows",OUT_OF_SCOPE:"Out of scope",GRAPH_UNAVAILABLE:"Graph unavailable",MODEL_UNAVAILABLE:"Model unavailable"};
 let lastQuestion="";
 
 async function overview(){
@@ -75,7 +76,8 @@ async function overview(){
   $("#live").innerHTML=o.live.map(i=>'<div class="liveitem"><div><span class="badge '+(i.kind==="chat"?"warn":"ok")+'">'+esc(i.kind)+' · authority '+esc(o.authority[i.kind])+'</span> <span class="muted">'+esc(i.author)+'</span></div><p>'+esc(i.text.length>180?i.text.slice(0,180)+"…":i.text)+'</p><button data-id="'+esc(i.id)+'">Add to graph</button></div>').join("");
   $("#live").querySelectorAll("button").forEach(b=>b.onclick=()=>live({itemId:b.dataset.id},b));
   $("#ckind").innerHTML=o.liveKinds.map(k=>'<option value="'+esc(k)+'">'+esc(k)+' ('+esc(o.authority[k])+')</option>').join("");
-  $("#cauthor").innerHTML=o.people.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join("");}
+  $("#cauthor").innerHTML=o.people.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join("");
+  if(o.offline){$("#cgo").disabled=true;$("#ctext").placeholder="Offline mode: custom records need a model. The three records above replay their cached extraction.";}}
 }
 fetch("/api/health").then(r=>r.json()).then(h=>{$("#foot").textContent="Graph: "+(h.graph||"?")+" ("+(h.source||"down")+") · Model: "+(h.model?.modelId||"not configured")+" via "+(h.model?.provider||"-")+" · read-only answers, drafts only";});
 overview();
@@ -138,18 +140,33 @@ function renderDecision(d){
   (x.discussedIn?.length?'<div class="muted">Discussed in '+esc(x.discussedIn.join(", "))+'</div>':"")+'</div>';});
  return h+'</div></div>';}
 
+function renderProfile(d){
+ if(d.status!=="FOUND")return '<div class="card">'+esc(REASON[d.reason]||d.reason)+'</div>';
+ let h='<div class="card"><h3>'+(d.subjectType==="team"?"Team":"Person")+'</h3><div class="big">'+esc(d.name)+'</div>';
+ if(d.subjectType==="team")h+='<div class="muted">led by '+esc(d.lead?.name||"nobody on record")+' · members: '+esc(d.members.map(m=>m.name).join(", "))+'</div>';
+ else h+='<div class="muted">'+esc(d.role||"")+' · '+esc(d.team||"no")+' team · lead '+esc(d.lead?.name||"?")+(d.manager?' · reports to '+esc(d.manager.name):"")+'</div>';
+ h+='<h3 style="margin-top:16px">Owns (by the same ownership policy)</h3>'+(d.owns.length?d.owns.map(o=>quote(o.quote,o.sourceId+" · "+o.sourceKind,o.serviceName+" → "+first(o.ownerName))).join(""):'<div class="muted">No service on record.</div>');
+ if(d.knows?.length)h+='<h3 style="margin-top:16px">Hands-on with</h3><div class="muted">'+d.knows.map(k=>esc(k.subject)+" ("+esc(k.resolved)+" resolved)").join(" · ")+'</div>';
+ if(d.decided?.length)h+='<h3 style="margin-top:16px">Decided</h3>'+d.decided.map(x=>'<div><span class="badge '+(x.current?"ok":"warn")+'">'+(x.current?"CURRENT":"SUPERSEDED")+'</span> <b>'+esc(x.id)+'</b> '+esc(x.title)+' <span class="muted">'+esc(day(x.at))+'</span></div>').join("");
+ return h+'</div>';}
+
+function renderSearch(d){
+ if(d.status!=="FOUND")return '<div class="card">'+esc(REASON[d.reason]||d.reason)+'</div>';
+ return '<div class="card"><h3>Records matching “'+esc(d.terms.join(" "))+'” ('+esc(d.mode)+', FalkorDB full-text index)</h3>'+
+  d.results.map(r=>quote(r.snippet,r.id+" · "+r.kind+" "+r.authority+" · "+day(r.at),"score "+r.score)).join("")+'</div>';}
+
 function render(d){
  let h='';
  h+='<div class="card"><h3>Answer'+(d.time?.matched?' · as of '+esc(day(d.time.asOf))+' (from “'+esc(d.time.matched)+'”)':'')+'</h3><p class="explain">'+esc(d.explanation)+'</p><div class="muted" style="margin-top:8px">'+(d.explanationSource==="model"?"Written by Nemotron, checked against the graph result":"Fixed template (model text missing or disagreed with the graph)")+'</div></div>';
- if(d.kind==="owner")h+=renderOwner(d);else if(d.kind==="expertise")h+=renderExpertise(d);else if(d.kind==="decision")h+=renderDecision(d);
- h+='<div class="card"><h3>What the agent did</h3><ol class="trace">'+(d.trace||[]).map(s=>'<li><b>'+esc(s.step)+'</b> '+esc(s.step==="time"?(s.error?s.error+" (“"+s.matched+"”)":s.matched?"“"+s.matched+"” → as of "+day(s.asOf):"now"):s.step==="model_explanation_rejected"?"guard discarded: “"+(s.text||"").slice(0,160)+"…”":[s.tool,s.subjectId,s.status,s.reason,s.source,s.retry?"retried with a tool required":""].filter(Boolean).join(" · "))+'</li>').join("")+'</ol>'+
+ if(d.kind==="owner")h+=renderOwner(d);else if(d.kind==="expertise")h+=renderExpertise(d);else if(d.kind==="decision")h+=renderDecision(d);else if(d.kind==="profile")h+=renderProfile(d);else if(d.kind==="search")h+=renderSearch(d);
+ h+='<div class="card"><h3>What the agent did</h3><ol class="trace">'+(d.trace||[]).map(s=>'<li><b>'+esc(s.step)+'</b> '+esc(s.step==="offline_route"?"fixed rules (no LLM) → "+(s.tool||"no tool")+(s.subjectId?" · "+s.subjectId:""):s.step==="time"?(s.error?s.error+" (“"+s.matched+"”)":s.matched?"“"+s.matched+"” → as of "+day(s.asOf):"now"):s.step==="model_explanation_rejected"?"guard discarded: “"+(s.text||"").slice(0,160)+"…”":[s.tool,s.subjectId,s.status,s.reason,s.source,s.retry?"retried with a tool required":""].filter(Boolean).join(" · "))+'</li>').join("")+'</ol>'+
   (d.cypher?'<details class="ev"><summary>Cypher it ran</summary><pre>'+esc(d.cypher.join("\n\n"))+'</pre></details>':"")+'</div>';
  $("#out").innerHTML=h;}
 
 async function live(body,btn){if(btn)btn.disabled=true;$("#liveout").innerHTML='<div class="muted">Nemotron is reading the record and the graph is being updated…</div>';
  try{const r=await (await fetch("/api/live",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
   if(r.error){$("#liveout").innerHTML='<div class="alert">'+esc(r.error)+'</div>';return;}
-  const f=r.facts||{};let h='<div class="card" style="margin:0"><h3>Added '+esc(r.source.id)+' ('+esc(r.source.kind)+', authority '+esc(r.source.authority)+')</h3>';
+  const f=r.facts||{};let h='<div class="card" style="margin:0"><h3>Added '+esc(r.source.id)+' ('+esc(r.source.kind)+', authority '+esc(r.source.authority)+')'+(r.source.simulated?' · simulated record typed in the UI':'')+(r.replayed?' · offline: replaying cached extraction':'')+'</h3>';
   h+=(f.ownership||[]).map(o=>'<div>✔ ownership: <b>'+esc(o.ownerId)+'</b> → '+esc(o.serviceId)+quote(o.quote,"verbatim in "+r.source.id)+'</div>').join("");
   h+=(f.decisions||[]).map(o=>'<div>✔ decision: <b>'+esc(o.decisionId)+'</b> by '+esc(o.decidedBy)+(o.supersedes?' supersedes '+esc(o.supersedes):"")+quote(o.quote,"verbatim in "+r.source.id)+'</div>').join("");
   h+=(f.rejected||[]).map(o=>'<div class="warn">✘ rejected '+esc(o.type)+': '+esc(o.reason)+'</div>').join("");

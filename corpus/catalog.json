@@ -1,39 +1,289 @@
 {
   "services": [
-    { "id": "billing-gateway", "name": "Billing Gateway", "aliases": ["billing gateway", "billing-gw", "BGW"] },
-    { "id": "ml-pipeline", "name": "ML Pipeline", "aliases": ["ml pipeline", "training pipeline"] },
-    { "id": "feature-store", "name": "Feature Store", "aliases": ["feature store", "fstore"] },
-    { "id": "payments-api", "name": "Payments API", "aliases": ["payments api", "pay-api"] },
-    { "id": "search-index", "name": "Search Index", "aliases": ["search index", "search-idx"] },
-    { "id": "checkout-web", "name": "Checkout Web", "aliases": ["checkout web", "checkout frontend"] },
-    { "id": "ledger-service", "name": "Ledger Service", "aliases": ["ledger service", "ledger"] },
-    { "id": "notification-service", "name": "Notification Service", "aliases": ["notification service", "notifier"] },
-    { "id": "identity-service", "name": "Identity Service", "aliases": ["identity service", "auth service"] },
-    { "id": "event-bus", "name": "Event Bus", "aliases": ["event bus", "kafka bus"] },
-    { "id": "analytics-warehouse", "name": "Analytics Warehouse", "aliases": ["analytics warehouse", "the warehouse", "dwh"] },
-    { "id": "mobile-app", "name": "Mobile App", "aliases": ["mobile app", "mobile client"] },
-    { "id": "infra-k8s", "name": "Infra K8s", "aliases": ["infra k8s", "k8s platform", "kubernetes platform"] }
+    {
+      "id": "billing-gateway",
+      "name": "Billing Gateway",
+      "aliases": [
+        "billing gateway",
+        "billing-gw",
+        "BGW"
+      ]
+    },
+    {
+      "id": "ml-pipeline",
+      "name": "ML Pipeline",
+      "aliases": [
+        "ml pipeline",
+        "training pipeline"
+      ]
+    },
+    {
+      "id": "feature-store",
+      "name": "Feature Store",
+      "aliases": [
+        "feature store",
+        "fstore"
+      ]
+    },
+    {
+      "id": "payments-api",
+      "name": "Payments API",
+      "aliases": [
+        "payments api",
+        "pay-api"
+      ]
+    },
+    {
+      "id": "search-index",
+      "name": "Search Index",
+      "aliases": [
+        "search index",
+        "search-idx"
+      ]
+    },
+    {
+      "id": "checkout-web",
+      "name": "Checkout Web",
+      "aliases": [
+        "checkout web",
+        "checkout frontend",
+        "checkout"
+      ]
+    },
+    {
+      "id": "ledger-service",
+      "name": "Ledger Service",
+      "aliases": [
+        "ledger service",
+        "ledger"
+      ]
+    },
+    {
+      "id": "notification-service",
+      "name": "Notification Service",
+      "aliases": [
+        "notification service",
+        "notifier",
+        "notifications"
+      ]
+    },
+    {
+      "id": "identity-service",
+      "name": "Identity Service",
+      "aliases": [
+        "identity service",
+        "auth service"
+      ]
+    },
+    {
+      "id": "event-bus",
+      "name": "Event Bus",
+      "aliases": [
+        "event bus",
+        "kafka bus"
+      ]
+    },
+    {
+      "id": "analytics-warehouse",
+      "name": "Analytics Warehouse",
+      "aliases": [
+        "analytics warehouse",
+        "the warehouse",
+        "dwh"
+      ]
+    },
+    {
+      "id": "mobile-app",
+      "name": "Mobile App",
+      "aliases": [
+        "mobile app",
+        "mobile client"
+      ]
+    },
+    {
+      "id": "infra-k8s",
+      "name": "Infra K8s",
+      "aliases": [
+        "infra k8s",
+        "k8s platform",
+        "kubernetes platform",
+        "kubernetes cluster",
+        "k8s cluster"
+      ]
+    }
   ],
   "projects": [
-    { "id": "orion", "name": "Project Orion", "aliases": ["Orion"], "serviceIds": ["billing-gateway"] },
-    { "id": "vega", "name": "Project Vega", "aliases": ["Vega"], "serviceIds": ["ml-pipeline", "feature-store"] },
-    { "id": "nova", "name": "Project Nova", "aliases": ["Nova"], "serviceIds": ["payments-api"] },
-    { "id": "lyra", "name": "Project Lyra", "aliases": ["Lyra"], "serviceIds": ["search-index"] },
-    { "id": "atlas", "name": "Project Atlas", "aliases": ["Atlas"], "serviceIds": ["checkout-web", "payments-api", "ledger-service"] },
-    { "id": "helix", "name": "Project Helix", "aliases": ["Helix"], "serviceIds": ["ledger-service"] },
-    { "id": "comet", "name": "Project Comet", "aliases": ["Comet"], "serviceIds": ["notification-service"] },
-    { "id": "quasar", "name": "Project Quasar", "aliases": ["Quasar"], "serviceIds": ["identity-service"] },
-    { "id": "pulsar", "name": "Project Pulsar", "aliases": ["Pulsar"], "serviceIds": ["event-bus"] },
-    { "id": "zephyr", "name": "Project Zephyr", "aliases": ["Zephyr"], "serviceIds": ["analytics-warehouse", "feature-store"] },
-    { "id": "aurora", "name": "Project Aurora", "aliases": ["Aurora"], "serviceIds": ["mobile-app", "notification-service"] },
-    { "id": "borealis", "name": "Project Borealis", "aliases": ["Borealis"], "serviceIds": ["infra-k8s"] }
+    {
+      "id": "orion",
+      "name": "Project Orion",
+      "aliases": [
+        "Orion"
+      ],
+      "serviceIds": [
+        "billing-gateway"
+      ]
+    },
+    {
+      "id": "vega",
+      "name": "Project Vega",
+      "aliases": [
+        "Vega"
+      ],
+      "serviceIds": [
+        "ml-pipeline",
+        "feature-store"
+      ]
+    },
+    {
+      "id": "nova",
+      "name": "Project Nova",
+      "aliases": [
+        "Nova"
+      ],
+      "serviceIds": [
+        "payments-api"
+      ]
+    },
+    {
+      "id": "lyra",
+      "name": "Project Lyra",
+      "aliases": [
+        "Lyra"
+      ],
+      "serviceIds": [
+        "search-index"
+      ]
+    },
+    {
+      "id": "atlas",
+      "name": "Project Atlas",
+      "aliases": [
+        "Atlas"
+      ],
+      "serviceIds": [
+        "checkout-web",
+        "payments-api",
+        "ledger-service"
+      ]
+    },
+    {
+      "id": "helix",
+      "name": "Project Helix",
+      "aliases": [
+        "Helix"
+      ],
+      "serviceIds": [
+        "ledger-service"
+      ]
+    },
+    {
+      "id": "comet",
+      "name": "Project Comet",
+      "aliases": [
+        "Comet"
+      ],
+      "serviceIds": [
+        "notification-service"
+      ]
+    },
+    {
+      "id": "quasar",
+      "name": "Project Quasar",
+      "aliases": [
+        "Quasar"
+      ],
+      "serviceIds": [
+        "identity-service"
+      ]
+    },
+    {
+      "id": "pulsar",
+      "name": "Project Pulsar",
+      "aliases": [
+        "Pulsar"
+      ],
+      "serviceIds": [
+        "event-bus"
+      ]
+    },
+    {
+      "id": "zephyr",
+      "name": "Project Zephyr",
+      "aliases": [
+        "Zephyr"
+      ],
+      "serviceIds": [
+        "analytics-warehouse",
+        "feature-store"
+      ]
+    },
+    {
+      "id": "aurora",
+      "name": "Project Aurora",
+      "aliases": [
+        "Aurora"
+      ],
+      "serviceIds": [
+        "mobile-app",
+        "notification-service"
+      ]
+    },
+    {
+      "id": "borealis",
+      "name": "Project Borealis",
+      "aliases": [
+        "Borealis"
+      ],
+      "serviceIds": [
+        "infra-k8s"
+      ]
+    }
   ],
   "topics": [
-    { "id": "kafka", "name": "Kafka", "aliases": ["apache kafka"] },
-    { "id": "postgres", "name": "Postgres", "aliases": ["postgresql", "pg"] },
-    { "id": "pci-compliance", "name": "PCI Compliance", "aliases": ["PCI", "PCI DSS"] },
-    { "id": "terraform", "name": "Terraform", "aliases": ["tf"] },
-    { "id": "kubernetes", "name": "Kubernetes", "aliases": ["k8s"] },
-    { "id": "fraud-models", "name": "Fraud Models", "aliases": ["fraud scoring", "risk models"] }
+    {
+      "id": "kafka",
+      "name": "Kafka",
+      "aliases": [
+        "apache kafka"
+      ]
+    },
+    {
+      "id": "postgres",
+      "name": "Postgres",
+      "aliases": [
+        "postgresql",
+        "pg"
+      ]
+    },
+    {
+      "id": "pci-compliance",
+      "name": "PCI Compliance",
+      "aliases": [
+        "PCI",
+        "PCI DSS"
+      ]
+    },
+    {
+      "id": "terraform",
+      "name": "Terraform",
+      "aliases": [
+        "tf"
+      ]
+    },
+    {
+      "id": "kubernetes",
+      "name": "Kubernetes",
+      "aliases": [
+        "k8s"
+      ]
+    },
+    {
+      "id": "fraud-models",
+      "name": "Fraud Models",
+      "aliases": [
+        "fraud scoring",
+        "risk models"
+      ]
+    }
   ]
 }

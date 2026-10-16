@@ -1,7 +1,7 @@
 {
  "model": "nvidia/nemotron-3-super-120b-a12b",
- "extractedAt": "2026-10-16T13:41:17.049Z",
- "seconds": 25,
+ "extractedAt": "2026-10-16T13:54:52.167Z",
+ "seconds": 13,
  "totals": {
   "sources": 140,
   "ownership": 17,
@@ -895,6 +895,46 @@
   },
   "msg-040": {
    "ownership": [],
+   "decisions": [],
+   "rejected": []
+  }
+ },
+ "live": {
+  "live-adr-015": {
+   "ownership": [],
+   "decisions": [
+    {
+     "decisionId": "ADR-015",
+     "title": "ADR-015: Move the ledger outbox relay to managed change data capture",
+     "decidedBy": "omar",
+     "serviceIds": [
+      "ledger-service"
+     ],
+     "supersedes": "ADR-012",
+     "quote": "We keep the outbox table, but replace the hand-written relay with a managed change data capture connector that reads the outbox from the Postgres write-ahead log and publishes to the existing ledger-events topic. The ledger service write path does not change."
+    }
+   ],
+   "rejected": []
+  },
+  "live-cc-1043": {
+   "ownership": [
+    {
+     "serviceId": "billing-gateway",
+     "ownerId": "cora",
+     "quote": "Ownership of billing-gateway transfers from Ben to Cora, effective immediately (2026-10-16T09:00:00Z)."
+    }
+   ],
+   "decisions": [],
+   "rejected": []
+  },
+  "live-chat-ben-handoff": {
+   "ownership": [
+    {
+     "serviceId": "billing-gateway",
+     "ownerId": "cora",
+     "quote": "Heads up: I'm handing billing gateway over to Cora this week, so start sending renewal questions her way."
+    }
+   ],
    "decisions": [],
    "rejected": []
   }

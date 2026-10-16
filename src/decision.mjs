@@ -22,6 +22,10 @@ LIMIT ${MAX_EVIDENCE_ROWS}
 export const PROJECT_SERVICES_CYPHER =
   "MATCH (p:Project {id: $projectId})-[:USES]->(s:Service) RETURN p.name AS projectName, s.id AS serviceId ORDER BY s.id";
 
+export const OWNER_TEAM_CYPHER =
+  "MATCH (p:Person {id: $id})-[:MEMBER_OF]->(t:Team) OPTIONAL MATCH (t)-[:LED_BY]->(l:Person) " +
+  "RETURN t.name AS team, l.id AS leadId, l.name AS leadName LIMIT 1";
+
 export const validId = s => typeof s === "string" && /^[a-z0-9][a-z0-9-]{0,47}$/.test(s);
 
 const abstain = (serviceId, asOf, reason, extra = {}) =>
@@ -81,7 +85,12 @@ export async function ownerOfService(graph, {serviceId, asOf}) {
   if (!validId(serviceId) || !validTime(asOf)) return abstain(serviceId, asOf, "INVALID_INPUT");
   try {
     const reply = await graph.query(OWNER_CYPHER, {params: {serviceId}});
-    return resolveOwner(reply?.data ?? reply, {serviceId, asOf});
+    const r = resolveOwner(reply?.data ?? reply, {serviceId, asOf});
+    if (r.status === "OWNER") {
+      const t = (await graph.query(OWNER_TEAM_CYPHER, {params: {id: r.owner.id}}))?.data?.[0];
+      if (t?.team) r.owner = {...r.owner, team: t.team, lead: t.leadId ? {id: t.leadId, name: t.leadName} : null};
+    }
+    return r;
   } catch (err) {
     return abstain(serviceId, asOf, "GRAPH_UNAVAILABLE", {diagnostic: String(err?.code || err?.name || "GRAPH_QUERY_ERROR")});
   }

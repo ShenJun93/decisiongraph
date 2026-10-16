@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "DecisionGraph: a Company Brain on FalkorDB that reads docs, tickets and chat into a provenance graph and answers who owns, who knows and why, with quoted sources, or refuses to guess",
+  "description": "DecisionGraph: a Company Brain on FalkorDB that reads docs, tickets and chat into a provenance graph and answers who owns, who knows, why, who is who, and what the records say, with quoted sources, or refuses to guess",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "ingest": "node --env-file=.env scripts/ingest.mjs",

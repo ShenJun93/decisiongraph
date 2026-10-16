@@ -1,7 +1,13 @@
 // Writes the corpus and the validated facts into FalkorDB. Structural edges (who resolved which
 // ticket, who wrote which doc) come straight from the records; ownership and decisions come only
 // from validated extractions, each linked to the source and quote that support it.
-import {entityNames, mentions} from "./corpus.mjs";
+import {entityNames, mentions, validTime} from "./corpus.mjs";
+
+/** When a record's claims take effect: its own "Effective: <ISO time>" line if present, else the record date. */
+export function effectiveTime(src) {
+  const m = /(?:^|\n)\s*-?\s*Effective:\s*(\d{4}-\d{2}-\d{2}T[0-9:.]+(?:Z|[+-]\d{2}:\d{2}))/i.exec(src.text || "");
+  return m && validTime(m[1]) ? m[1] : src.at;
+}
 
 // Labels cannot be query parameters, so each kind maps to a fixed label.
 const KIND_LABEL = Object.freeze({
@@ -72,9 +78,10 @@ export async function writeSources(graph, sources, factsById, {catalog}) {
   for (const s of sources) {
     const f = factsById[s.id];
     if (!f) continue;
+    const effectiveAt = effectiveTime(s);
     for (const o of f.ownership || []) {
       claims.push({id: `${s.id}:${o.serviceId}:${o.ownerId}`, source: s.id, service: o.serviceId, owner: o.ownerId,
-        effectiveAt: s.at, quote: o.quote});
+        effectiveAt, quote: o.quote});
     }
     for (const d of f.decisions || []) {
       decisions.push({...d, title: String(d.title).replace(/^ADR-\d{3}\s*[:\-]\s*/i, ""), source: s.id, at: s.at});

@@ -42,8 +42,12 @@ export function createHostedModel(config = hostedModelConfig(), fetchImpl = fetc
   };
 }
 
-/** The model adapter selected by MODEL_PROVIDER: "nvidia" (hosted Nemotron) or "local" (loopback llama.cpp). */
+/** No model at all: the agent uses fixed routing rules and template answers (try the app without an API key). */
+export const OFFLINE_MODEL = Object.freeze(Object.assign(async () => { throw new Error("OFFLINE_MODE"); }, {offline: true}));
+
+/** The model adapter selected by MODEL_PROVIDER: "nvidia" (hosted Nemotron), "local" (loopback llama.cpp) or "offline". */
 export async function modelFromEnv(env = process.env) {
+  if (env.MODEL_PROVIDER === "offline") return {model: OFFLINE_MODEL, provider: "offline", modelId: "fixed rules (no LLM)"};
   if ((env.MODEL_PROVIDER || "nvidia") === "local") {
     const {createLocalModel, localModelConfig} = await import("./local-model.mjs");
     return {model: createLocalModel(localModelConfig(env)), provider: "local", modelId: env.LOCAL_LLM_MODEL};

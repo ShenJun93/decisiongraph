@@ -7,7 +7,8 @@ import {openGraph} from "../src/db.mjs";
 import {loadCorpus, liveSource} from "../src/corpus.mjs";
 import {loadGraph, writeSources, deriveEdges} from "../src/graph-load.mjs";
 import {ownerOfService, ownerOfProject} from "../src/decision.mjs";
-import {whoKnows, traceDecision} from "../src/knowledge.mjs";
+import {whoKnows, traceDecision, profile, searchRecords} from "../src/knowledge.mjs";
+import {OFFLINE_MODEL} from "../src/hosted-model.mjs";
 import {askCompanyBrain} from "../src/agent.mjs";
 
 const extractedFile = new URL("../corpus/extracted.json", import.meta.url);
@@ -94,4 +95,29 @@ test("live update: chat cannot override change control, a new change-control rec
   await deriveEdges(conn.graph);
   assert.equal((await ownerOfService(conn.graph, {serviceId: "billing-gateway", asOf: NOW})).owner.id, "cora");
   assert.equal((await ownerOfService(conn.graph, {serviceId: "billing-gateway", asOf: "2026-10-15T00:00:00Z"})).owner.id, "ben");
+});
+
+test("person and team profiles reuse the ownership policy", {skip}, async () => {
+  await loadGraph(conn.graph, corpus, extracted);
+  const omar = await profile(conn.graph, {subjectId: "omar", asOf: NOW});
+  assert.equal(omar.team, "Payments");
+  assert.deepEqual(omar.owns.map(o => o.serviceId), ["ledger-service"]);
+  assert.ok(omar.decided.some(d => d.id === "ADR-012" && d.current));
+  const team = await profile(conn.graph, {subjectId: "payments", asOf: NOW});
+  assert.equal(team.subjectType, "team");
+  assert.ok(team.owns.some(o => o.serviceId === "billing-gateway" && o.ownerId === "ben"));
+});
+
+test("full-text search returns quoted snippets from the records", {skip}, async () => {
+  const r = await searchRecords(conn.graph, {query: "transactional outbox"});
+  assert.equal(r.status, "FOUND");
+  assert.ok(r.results.some(x => x.id === "adr-012"));
+  assert.match(r.results[0].snippet, /outbox/i);
+});
+
+test("offline mode answers through the same tools with template text", {skip}, async () => {
+  const r = await askCompanyBrain({graph: conn.graph, now: new Date(NOW), question: "Who owns checkout?", model: OFFLINE_MODEL});
+  assert.equal(r.services[0].owner.id, "kai");
+  assert.equal(r.explanationSource, "template");
+  assert.match(r.explanation, /Growth team/);
 });
