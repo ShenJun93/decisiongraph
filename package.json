@@ -8,9 +8,10 @@
     "test": "node --test tests/*.test.mjs",
     "seed": "node scripts/seed.mjs",
     "demo": "node scripts/demo.mjs",
-    "start": "node src/server.mjs",
+    "start": "node --env-file=.env src/server.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "agent:demo": "node scripts/agent-demo.mjs",
+    "agent:demo": "node --env-file=.env scripts/agent-demo.mjs",
+    "ask": "node --env-file=.env scripts/ask.mjs",
     "graph:counterfactual": "node scripts/counterfactual-acceptance.mjs"
   },
   "dependencies": {
