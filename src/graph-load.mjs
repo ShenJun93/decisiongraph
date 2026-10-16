@@ -106,8 +106,8 @@ export async function deriveEdges(graph) {
   // Records that cite a decision or ticket by id.
   await graph.query("MATCH (s:Source), (d:Decision) WHERE NOT (s)-[:RECORDS]->(d) AND s.text CONTAINS d.id " +
     "MERGE (s)-[:DISCUSSES]->(d)");
-  await graph.query("MATCH (src:Source)-[:RECORDS]->(d:Decision), (t:Ticket) WHERE src.text CONTAINS t.id " +
-    "MERGE (d)-[:MOTIVATED_BY]->(t)");
+  await graph.query("MATCH (src:Source)-[:RECORDS]->(d:Decision), (t:Ticket) " +
+    "WHERE src.text CONTAINS t.id AND t.at <= d.at MERGE (d)-[:MOTIVATED_BY]->(t)");
   // People who worked the same ticket (reported, assigned, resolved, commented) collaborated.
   await graph.query("MATCH ()-[c:COLLABORATED]->() DELETE c");
   await graph.query(

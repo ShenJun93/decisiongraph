@@ -4,7 +4,7 @@
 
 Ask a company assistant "who should sign off the Orion release?" and it will name someone, even when the
 company's own records disagree: last month's service directory says Aria, a signed change-control record
-from Tuesday says Ben, and a chat message from the same afternoon insists it is still Aria.
+from Wednesday says Ben, and a chat message from the same afternoon insists it is still Aria.
 
 DecisionGraph reads a company's **docs, tickets and chat** into one **FalkorDB** graph. Every fact in the graph
 points back to the record and the **verbatim quote** that support it, and every record carries an authority
@@ -182,14 +182,16 @@ into a single name.
 
 ## Evaluation
 
-`npm run eval` scores the pipeline against hand-written ground truth (`corpus/expected.json`):
+`npm run eval` (add `--online` to route through Nemotron too) scores the pipeline against hand-written ground truth
+(`corpus/expected.json` and the typed questions in `scripts/eval.mjs`):
 
 | What | Result |
 |---|---|
 | Ownership claims extracted (Nemotron + quote checks, 140 records) | 17 / 17 found, 0 false (precision 1.0, recall 1.0) |
 | Decisions extracted | 4 / 4 found, 0 false |
 | Facts the model proposed that the checks rejected | 3 (decisions proposed from chat messages) |
-| Owner named (or abstention) per service, incl. a past date | 14 / 14 correct |
+| Ownership policy: owner named (or abstention) per service and date, incl. a past date | 14 / 14 correct |
+| Typed questions end to end (18: owners, dates, a project, experts, decisions, people, teams, search, 3 refusals) | 18 / 18 with Nemotron routing · 18 / 18 with offline rules |
 | Tests (`npm test`) | 36 pass: unit tests and integration tests against the live FalkorDB |
 
 Details in `evidence/eval.json`.
@@ -210,7 +212,8 @@ Other commands:
 
 ```bash
 npm run ingest                        # re-run Nemotron extraction over all 140 records -> corpus/extracted.json
-npm run eval                          # extraction precision/recall + answer accuracy vs corpus/expected.json
+npm run eval                          # extraction precision/recall, policy checks, 18 typed questions (offline rules)
+npm run eval -- --online              # ... and the same typed questions through Nemotron
 npm run ask                           # the demo questions from the command line
 npm run ask -- "Who knows Kafka?"     # your own question
 npm test                              # unit tests + integration tests against the live FalkorDB

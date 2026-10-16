@@ -96,9 +96,13 @@ RETURN collect(DISTINCT s.id) AS services, collect(DISTINCT o.id) AS supersedes,
        collect(DISTINCT t.id) AS motivatedBy, collect(DISTINCT x.id) AS discussedIn
 `.trim();
 
-export const SERVICE_DECISIONS_CYPHER =
-  "MATCH (d:Decision)-[:AFFECTS]->(:Service {id: $id}) OPTIONAL MATCH (newer:Decision)-[:SUPERSEDES]->(d) " +
-  "RETURN d.id AS id, d.at AS at, count(newer) = 0 AS current ORDER BY at";
+// Decisions about a service (AFFECTS) or a topic (the recording ADR mentions it).
+export const SERVICE_DECISIONS_CYPHER = `
+MATCH (d:Decision)
+WHERE (d)-[:AFFECTS]->(:Service {id: $id}) OR (:Topic {id: $id})<-[:MENTIONS]-(:Source)-[:RECORDS]->(d)
+OPTIONAL MATCH (newer:Decision)-[:SUPERSEDES]->(d)
+RETURN d.id AS id, d.at AS at, count(newer) = 0 AS current ORDER BY at
+`.trim();
 
 const DECISION_ID = /^ADR-\d{3}$/;
 
@@ -218,7 +222,8 @@ ORDER BY score DESC LIMIT 6
 `.trim();
 
 const STOP = new Set(["the", "and", "for", "with", "why", "did", "does", "what", "who", "how", "was", "were", "are",
-  "our", "use", "used", "using", "about", "from", "that", "this", "have", "has", "had", "into", "when", "where"]);
+  "our", "use", "used", "using", "about", "from", "that", "this", "have", "has", "had", "into", "when", "where",
+  "which", "find", "search", "mention", "mentions", "mentioned", "record", "records", "doc", "docs", "any", "all"]);
 /** Search terms: plain words only, so nothing reaches the full-text query syntax except words. */
 export const searchTerms = q => [...new Set(String(q || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/)
   .filter(w => w.length >= 3 && !STOP.has(w)))].slice(0, 6);

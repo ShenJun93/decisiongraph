@@ -153,5 +153,290 @@
     "ok": true
    }
   ]
+ },
+ "typedQuestions": {
+  "mode": "offline routing rules",
+  "correct": 18,
+  "total": 18,
+  "rows": [
+   {
+    "question": "Who should sign off the Orion release?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owned the billing gateway on September 25, 2026?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owned the billing gateway on 9/25/2026?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owns billing?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owns checkout?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owns everything Project Atlas depends on?",
+    "tool": "owner_of",
+    "status": "PARTIAL",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who is responsible for Lyra's search index?",
+    "tool": "owner_of",
+    "status": "ABSTAIN",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owns the mobile app?",
+    "tool": "owner_of",
+    "status": "ABSTAIN",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who knows the most about the search index?",
+    "tool": "who_knows",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who knows Kafka best?",
+    "tool": "who_knows",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Why did we stop publishing ledger events through Kafka (ADR-007)?",
+    "tool": "trace_decision",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "What did we decide about Kafka?",
+    "tool": "trace_decision",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "What does Omar own?",
+    "tool": "person_or_team",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who leads the Payments team?",
+    "tool": "person_or_team",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Which records mention dunning?",
+    "tool": "search_records",
+    "status": "FOUND",
+    "reason": null,
+    "ok": true
+   },
+   {
+    "question": "Who owned the billing gateway 3 weeks ago?",
+    "tool": null,
+    "status": "ABSTAIN",
+    "reason": "AMBIGUOUS_TIME",
+    "ok": true
+   },
+   {
+    "question": "Who owns Project Zeus?",
+    "tool": null,
+    "status": "OUT_OF_SCOPE",
+    "reason": "OUT_OF_SCOPE",
+    "ok": true
+   },
+   {
+    "question": "What is the weather in Hanoi?",
+    "tool": null,
+    "status": "OUT_OF_SCOPE",
+    "reason": "OUT_OF_SCOPE",
+    "ok": true
+   }
+  ]
+ },
+ "typedQuestionsOnline": {
+  "mode": "nvidia/nemotron-3-super-120b-a12b",
+  "correct": 18,
+  "total": 18,
+  "modelExplanationsKept": 12,
+  "rows": [
+   {
+    "question": "Who should sign off the Orion release?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who owned the billing gateway on September 25, 2026?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who owned the billing gateway on 9/25/2026?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who owns billing?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who owns checkout?",
+    "tool": "owner_of",
+    "status": "OWNER",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who owns everything Project Atlas depends on?",
+    "tool": "owner_of",
+    "status": "PARTIAL",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who is responsible for Lyra's search index?",
+    "tool": "owner_of",
+    "status": "ABSTAIN",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who owns the mobile app?",
+    "tool": "owner_of",
+    "status": "ABSTAIN",
+    "reason": null,
+    "explanationSource": "template",
+    "ok": true
+   },
+   {
+    "question": "Who knows the most about the search index?",
+    "tool": "who_knows",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "template",
+    "ok": true
+   },
+   {
+    "question": "Who knows Kafka best?",
+    "tool": "who_knows",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Why did we stop publishing ledger events through Kafka (ADR-007)?",
+    "tool": "trace_decision",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "What did we decide about Kafka?",
+    "tool": "trace_decision",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "What does Omar own?",
+    "tool": "person_or_team",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Who leads the Payments team?",
+    "tool": "person_or_team",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "model",
+    "ok": true
+   },
+   {
+    "question": "Which records mention dunning?",
+    "tool": "search_records",
+    "status": "FOUND",
+    "reason": null,
+    "explanationSource": "template",
+    "ok": true
+   },
+   {
+    "question": "Who owned the billing gateway 3 weeks ago?",
+    "tool": null,
+    "status": "ABSTAIN",
+    "reason": "AMBIGUOUS_TIME",
+    "explanationSource": "template",
+    "ok": true
+   },
+   {
+    "question": "Who owns Project Zeus?",
+    "tool": "owner_of",
+    "status": "ABSTAIN",
+    "reason": "NOT_IN_GRAPH",
+    "explanationSource": "template",
+    "ok": true
+   },
+   {
+    "question": "What is the weather in Hanoi?",
+    "tool": null,
+    "status": "OUT_OF_SCOPE",
+    "reason": "OUT_OF_SCOPE",
+    "explanationSource": "template",
+    "ok": true
+   }
+  ]
  }
 }

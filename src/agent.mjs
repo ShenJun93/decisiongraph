@@ -107,8 +107,8 @@ export function agentTools(e) {
       [...e.projects.map(p => p.id), ...e.services.map(s => s.id)]),
     tool("who_knows", "Who has hands-on knowledge of a service or topic (resolved tickets, wrote runbooks/ADRs, discussed it): who to ask.",
       [...e.services.map(s => s.id), ...e.topics.map(t => t.id)]),
-    tool("trace_decision", "Why something was decided: an architecture decision (ADR) or the decisions affecting a service, with sources and what superseded what.",
-      [...e.decisions.map(d => d.id), ...e.services.map(s => s.id)]),
+    tool("trace_decision", "Why something was decided: an architecture decision (ADR), or the decisions about a service or topic, with sources and what superseded what.",
+      [...e.decisions.map(d => d.id), ...e.services.map(s => s.id), ...e.topics.map(t => t.id)]),
     tool("person_or_team", "About a person or a team: their team and lead, what they own, what they know, what they decided.",
       [...e.people.map(p => p.id), ...e.teams.map(t => t.id)]),
     {type: "function", function: {name: "search_records",
@@ -178,7 +178,8 @@ export function routeOffline(question, e) {
   const n = namedEntities(question, e);
   if (/\b(why|decided|decision|decide|adr)\b/.test(q)) {
     if (n.decisions.length) return {tool: "trace_decision", args: {subjectId: n.decisions[0].id}};
-    if (n.services.length) return {tool: "trace_decision", args: {subjectId: longest(n.services).id}};
+    const s = longest([...n.services, ...n.topics]);
+    if (s) return {tool: "trace_decision", args: {subjectId: s.id}};
   }
   if (/\b(who knows|knows? (the )?most|expert|who (should|can|do) i ask|who to ask|familiar with|knowledge of)\b/.test(q)) {
     const s = longest([...n.services, ...n.topics]);
@@ -274,6 +275,7 @@ const LEAK = /\b(claimId|serviceId|sourceId|subjectId|ownerId|busFactorWarning)\
 export function explanationAgrees(text, r, people) {
   if (typeof text !== "string" || text.trim().length < 10 || text.length > 1200) return false;
   if (LEAK.test(text)) return false; // internal field names or reason codes
+  if ((text.match(/[.!?](\s|$)/g) || []).length > 4) return false; // asked for at most three sentences
   const t = plain(text).toLowerCase();
   if (APPROVAL.test(t)) return false;
   const evidence = JSON.stringify(r).toLowerCase();
@@ -296,7 +298,11 @@ export function explanationAgrees(text, r, people) {
     if (named.length < (r.services || []).length && !REFUSAL.test(t)) return false;
     return true;
   }
-  if (r.kind === "expertise") return r.status !== "FOUND" ? REFUSAL.test(t) : mentions(t, [firstName(r.people[0].name).toLowerCase()]);
+  if (r.kind === "expertise") {
+    if (r.status !== "FOUND") return REFUSAL.test(t);
+    if (/\b(owner|owns|owned|ownership)\b/.test(t.replace(/"[^"]{0,300}"/g, '""'))) return false; // expertise is not ownership
+    return mentions(t, [firstName(r.people[0].name).toLowerCase()]);
+  }
   if (r.kind === "decision") {
     if (r.status !== "FOUND") return REFUSAL.test(t);
     return r.decisions.filter(d => d.current).every(d => t.includes(d.id.toLowerCase()));
