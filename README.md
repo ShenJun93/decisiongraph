@@ -1,50 +1,160 @@
-# DecisionGraph — Graph Hacks: Context for AI Agents (October 2026)
+# DecisionGraph — a Company Brain that refuses to guess
 
-**Track candidate:** Company Brain (Track 03). Started after the official October 15, 2026 01:31 ICT opening. **Work in progress: not a submitted or prize-ready agent.**
+**Graph Hacks: Context for AI Agents (WeMakeDevs × FalkorDB, October 2026) · Track: Company Brain**
 
-## Scope and safety
-A synthetic Project Orion release question is resolved by querying a FalkorDB knowledge graph. Three provenance-tagged ownership claims disagree. The policy considers source authority, effective time and equal-rank collisions, then returns either a traceable **human-review draft** or **ABSTAIN**. No payments, real releases, messages, approvals or external side effects are executed. No personal or restricted data is used. The deterministic graph workflow is now accompanied by a restricted **LLM-driven tool-call orchestration adapter**. Unit tests use a stub model; until a legally licensed local model and FalkorDB both run for a real end-to-end attempt, **genuine LLM+FalkorDB operation is NOT YET VERIFIED**.
+Ask "who should sign off the Orion release?" and most AI assistants will name someone. They will name
+someone even when the company's own records disagree: an old directory entry, a newer change-control
+record, a chat message from yesterday. DecisionGraph keeps that company knowledge in **FalkorDB** as a
+provenance graph. Every ownership claim is linked to the source that attests it, the source's authority,
+and when it took effect. The agent answers only from that graph:
 
-## Run locally (Node >= 24, Docker Desktop with a healthy Linux daemon)
-1. Confirm free disk and Docker memory first. This project does not manage or prune other projects' containers or volumes.
-2. `docker compose up -d graph` — pinned `falkordb/falkordb:v4.20.4`, port `127.0.0.1:16379`, dedicated volume and container, bounded 1.5 GiB RAM.
-3. `npm install --ignore-scripts` (pinned `falkordb@6.8.0`). No paid API or LLM model.
-4. `node scripts/smoke.mjs` — actual FalkorDB write and read of a unique probe node.
-5. `node scripts/seed.mjs` — idempotently create synthetic graph fixture.
-6. `node src/server.mjs`, open `http://127.0.0.1:18737`; POST `/api/decision` with `{"projectId":"orion"}`.
-7. `npm test` — offline unit and negative tests (22 PASS on Oct 15); these use simulated graph/model calls, NOT live DB evidence.
-8. `node scripts/counterfactual-acceptance.mjs` **only after FalkorDB is healthy** — in separate graph `gh2026_companybrain_acceptance`, verify live baseline owner, mutate one synthetic ownership link, confirm answer changes, force a same-rank conflict and require ABSTAIN, then restore test edges even on error. A mock-backed test for this protocol passed, actual live query still BLOCKED by Docker.
-9. `node scripts/agent-demo.mjs` **only after a lawful tool-calling model on loopback and FalkorDB are both available**; does not silently use a paid/cloud API or unlicensed model. Genuine LLM model call remains UNVERIFIED.
-10. `docker compose stop graph` when finished; do not delete other Docker data.
+- **One credible owner**: it names them, shows the exact graph path behind the answer, lists the claims it
+  outranked, and drafts a review task for a human (never an approval).
+- **Evidence that conflicts or is incomplete**: it **abstains** and says why, instead of picking a winner.
 
-**Environment:** optional `GRAPH_HOST=127.0.0.1`, `GRAPH_PORT=16379`, `GRAPH_NAME=gh2026_companybrain_owner`, `APP_PORT=18737`. Only localhost is accepted for graph and web ports.
+All data is synthetic. Nothing is ever approved, sent or executed: the only output is a draft.
 
-## Graph data model
-- `(Project {id,name})-[:USES]->(Service {id,name})`
-- `(OwnershipClaim {id,effectiveAt})-[:ABOUT]->(Service)`
-- `(Source {id,rank})-[:ATTESTS]->(OwnershipClaim)`
-- `(OwnershipClaim)-[:NAMES_OWNER]->(Person {id,name})`
+## Demo
 
-The source rank (0..100) and latest effective timestamp jointly select a candidate. Two different owners with equal top rank and timestamp cause `ABSTAIN`. Invalid/missing source fields, future-only claims, multiple services and disconnected/unavailable FalkorDB also abstain. The query uses FalkorDB `OPTIONAL MATCH` so incomplete ownership claims and services remain visible as null provenance rows and trigger `ABSTAIN`; mandatory inner joins must not silently hide a conflicting claim. Equally authoritative timestamps are compared by UTC instant (different offsets cannot bypass the tie rule). At the bounded query limit of 50 returned rows, provenance may be truncated, so the result fails closed as `EVIDENCE_RESULT_LIMIT`.
+- Video: _link added at submission_
+- Run it locally in about 5 minutes (below). The UI is at http://127.0.0.1:18737.
 
-## Key parameterized Cypher query
+| Question | Graph evidence | Answer |
+|---|---|---|
+| Who should sign off the Orion release? | Signed change-control (authority 90, Oct 14) vs older directory entry (90, Sep 20) vs chat note (35) | **Ben**, with the path and the two outranked claims |
+| Who owns the ML pipeline behind Vega? | HR system of record (95) vs a newer wiki edit (20) | **Cora** |
+| Can I ship Nova today, and who approves it? | Two change-control records, same authority (80), same instant, different owners | **Abstain**: equal-authority conflict |
+| Who is responsible for Lyra's search index? | A claim that no source attests | **Abstain**: incomplete provenance |
+
+The UI also runs a **live counterfactual** on a separate graph to prove the graph, not the model, drives
+the answer: read the owner (Ben), change one `NAMES_OWNER` edge (→ Aria), add an equal-authority
+conflicting claim (→ abstain), then restore (→ Ben).
+
+## How it works
+
+```
+question ──► Nemotron (tool call, project chosen from the graph's own project list)
+                │  get_project_owner_evidence({projectId})        ← only tool, read-only
+                ▼
+          FalkorDB  ── parameterized Cypher (below) ──► provenance rows
+                ▼
+          provenance policy (src/decision.mjs): authority → recency → tie / gap check
+                ▼
+          HUMAN_REVIEW_DRAFT (owner + path + outranked claims)   or   ABSTAIN (reason)
+                ▼
+          Nemotron writes a ≤3-sentence explanation from that result only;
+          it is kept only if it agrees with the decision, otherwise a fixed template is used
+```
+
+The model chooses *which project* the question is about and *how to phrase* the answer. It never writes
+Cypher, never sees anything the graph did not return, and cannot change the decision: the project ID must
+be one the graph listed, the tool takes exactly one argument, and an explanation that names a different
+owner or claims approval is discarded.
+
+### Graph model
+
+```
+(Project {id, name}) -[:USES]-> (Service {id, name})
+(OwnershipClaim {id, effectiveAt}) -[:ABOUT]-> (Service)
+(Source {id, rank 0..100}) -[:ATTESTS]-> (OwnershipClaim)
+(OwnershipClaim) -[:NAMES_OWNER]-> (Person {id, name})
+```
+
+Why a graph: the question "who owns this?" is a path question. The answer depends on which claim is
+about which service, who attests it and how much that source is trusted. In a flat document store those
+relationships live in prose; here they are edges the agent can query, count and explain.
+
+### Cypher
+
+The agent lists projects:
+
+```cypher
+MATCH (p:Project) RETURN p.id AS id, p.name AS name ORDER BY p.id LIMIT 100
+```
+
+and reads one project's provenance (`src/decision.mjs`):
+
 ```cypher
 MATCH (project:Project {id: $projectId})-[:USES]->(service:Service)
-MATCH (claim:OwnershipClaim)-[:ABOUT]->(service)
-MATCH (source:Source)-[:ATTESTS]->(claim)
-MATCH (claim)-[:NAMES_OWNER]->(owner:Person)
+OPTIONAL MATCH (claim:OwnershipClaim)-[:ABOUT]->(service)
+OPTIONAL MATCH (source:Source)-[:ATTESTS]->(claim)
+OPTIONAL MATCH (claim)-[:NAMES_OWNER]->(owner:Person)
 RETURN project.id AS projectId, service.id AS serviceId,
-  claim.id AS claimId, claim.effectiveAt AS effectiveAt,
-  source.id AS sourceId, source.rank AS sourceRank,
-  owner.id AS ownerId, owner.name AS ownerName
+       claim.id AS claimId, claim.effectiveAt AS effectiveAt,
+       source.id AS sourceId, source.rank AS sourceRank,
+       owner.id AS ownerId, owner.name AS ownerName
 ORDER BY source.rank DESC, claim.effectiveAt DESC
 LIMIT 50
 ```
-Full query: `src/decision.mjs`; graph fixtures in `src/fixtures.mjs` and `scripts/seed.mjs`. All queries are bounded; no user-provided Cypher executes.
 
-## Evidence and remaining eligibility gates
-- Local policy tests can be run without Docker and have been executed; actual graph read/write must be confirmed independently via `smoke.mjs` before any working-demo claim.
-- The official October rules require FalkorDB to be essential and a **working agent**, not an attractive static graph. Genuine LLM tool-calling, interactive counterfactual query, graph-outage acceptance, video and a public repository are still required.
-- `falkordb/falkordb:v4.20.4` is a version tag; capture immutable image digest after a successful pull/start and update to a digest pin before public publication.
-- AI assistance used for code writing. Owner must inspect, understand, verify and approve the final submission; never auto-submit. Project status: **OWNER_CONFIRMED/PORTAL_UNVERIFIED**, **NOT_SUBMITTED**.
-- Official rules: https://www.wemakedevs.org/hackathons/falkordb/rules . Submission closes October 19, 2026 01:29 ICT.
+`OPTIONAL MATCH` is deliberate. With plain `MATCH`, a claim that has no source simply disappears from
+the result, and the agent would confidently pick from what is left. Keeping it as a row with a null
+source lets the policy see the gap and abstain (the Lyra case).
+
+### The decision policy (`src/decision.mjs`)
+
+1. Any row with missing provenance (no source, rank, owner or valid time) → **abstain**.
+2. Claims that take effect after "now" are ignored. More than one service for the project → abstain.
+3. Highest source authority wins, then the most recent effective time (compared as UTC instants, so
+   `12:00Z` and `19:00+07:00` are the same moment).
+4. Two different owners at the same top authority and instant → **abstain**, listing both.
+5. 50 rows (the query limit) → abstain, because a conflicting claim might have been cut off.
+
+## Run it locally
+
+Requirements: Node 24, Docker with a running Linux engine, a free NVIDIA API key.
+
+```bash
+docker compose up -d graph            # FalkorDB on 127.0.0.1:16379 (pinned image digest)
+npm install --ignore-scripts
+cp .env.example .env                  # add your nvapi- key from https://build.nvidia.com
+npm run smoke                         # real write + read of a probe node
+npm run seed                          # synthetic company graph (4 projects)
+npm start                             # http://127.0.0.1:18737
+```
+
+Command-line equivalents:
+
+```bash
+npm run ask                           # the four demo questions through Nemotron + FalkorDB
+npm run ask -- "Who owns Vega?"       # your own question
+npm run graph:counterfactual          # live counterfactual on the separate acceptance graph
+npm test                              # 34 offline tests (mock graph and mock model)
+docker compose stop graph
+```
+
+`MODEL_PROVIDER=local` with `LOCAL_LLM_URL` / `LOCAL_LLM_MODEL` runs the same agent on a loopback
+OpenAI-compatible server (llama.cpp) instead of NVIDIA's API.
+
+## Safety choices
+
+- The graph host, the app and the local-model endpoint are loopback-only; the hosted model may only call
+  `https://integrate.api.nvidia.com`. The API key is read from `.env` (git-ignored) and sent only as a
+  bearer header.
+- One read-only tool with a closed project enum. No user-supplied Cypher is ever executed.
+- Output is a draft with `requiresHumanApproval: true` and `authorizedExternalActions: false`.
+- Model failure, graph outage and malformed tool calls all end in **abstain**, never in a guess.
+
+## Tests and evidence
+
+- `npm test`: 34 tests covering the policy (ties, timezones, gaps, row cap), the agent (tool scope,
+  explanation check, model and graph failures) and the NVIDIA adapter.
+- `evidence/`: dated logs of the live runs (FalkorDB smoke, seed, counterfactual, Nemotron tool calls).
+
+## Built during the hackathon, with AI assistance
+
+All code was written after the event opened (15 Oct 2026, 00:01 IST). It was built with AI coding
+assistants (Anthropic Claude via Claude Code), and the agent itself runs on NVIDIA Nemotron. The
+participant reviewed and ran the code, and understands the design above. Data is synthetic; names carry
+a "(synthetic)" suffix.
+
+## Limits
+
+- The demo graph is small and synthetic: four projects, eight claims. The policy is general, but the
+  source authorities are hand-set.
+- One question type (ownership/sign-off). Other company questions would need their own read-only tools
+  and policies.
+- The explanation check is a guard, not a proof: it rejects text that names the wrong owner or claims
+  approval, and falls back to a fixed template.
+
+License: MIT.
