@@ -9,6 +9,7 @@ import {extractSource} from "./extract.mjs";
 import {deriveEdges, graphStats, writeSources} from "./graph-load.mjs";
 import {seedGraph} from "../scripts/seed.mjs";
 import {DEMO_QUESTIONS} from "../scripts/ask.mjs";
+import {untrustedChatItem} from "./live-trust.mjs";
 
 const PAGE = readFileSync(new URL("./page.html", import.meta.url), "utf8");
 const gateway = await openGraph();
@@ -31,7 +32,7 @@ const cachedLive = (() => {
   try { return JSON.parse(readFileSync(new URL("../corpus/extracted.json", import.meta.url), "utf8")).live || {}; }
   catch { return {}; }
 })();
-const LIVE_KINDS = ["chat", "change-control", "wiki", "ticket"];
+const LIVE_KINDS = ["chat"]; // Unverified browser text must never impersonate a signed change-control record.
 
 function send(res, status, body, type = "application/json") {
   res.writeHead(status, {"content-type": type + "; charset=utf-8", "cache-control": "no-store",
@@ -58,17 +59,9 @@ async function exclusive(res, fn) {
   finally { busy = false; }
 }
 
-let customCount = 0;
+// Interactive input is not an authenticated company document: accept only unverified chat.
 function customItem(d) {
-  const text = String(d?.text || "").trim();
-  if (text.length < 10 || text.length > 1500) throw new Error("TEXT_LENGTH");
-  if (!LIVE_KINDS.includes(d.kind)) throw new Error("KIND");
-  if (!corpus.org.people.some(p => p.id === d.author)) throw new Error("AUTHOR");
-  const id = `live-custom-${++customCount}`;
-  const at = new Date().toISOString();
-  return d.kind === "chat"
-    ? {id, format: "chat", channel: "#live", author: d.author, at, text}
-    : {id, format: "doc", kind: d.kind, title: `Live ${d.kind} record`, author: d.author, date: at, text};
+  return untrustedChatItem(d, corpus.org.people);
 }
 
 const server = http.createServer(async (req, res) => {

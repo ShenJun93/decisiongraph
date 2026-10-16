@@ -192,7 +192,7 @@ into a single name.
 | Facts the model proposed that the checks rejected | 3 (decisions proposed from chat messages) |
 | Ownership policy: owner named (or abstention) per service and date, incl. a past date | 14 / 14 correct |
 | Typed questions end to end (18: owners, dates, a project, experts, decisions, people, teams, search, 3 refusals) | 18 / 18 with Nemotron routing · 18 / 18 with offline rules |
-| Tests (`npm test`) | 36 pass: unit tests and integration tests against the live FalkorDB |
+| Tests (`npm test`) | 43 pass: unit/integration tests against live FalkorDB, plus regressions for untrusted-source impersonation, record-ID collision and negative/transfer ownership wording |
 
 Details in `evidence/eval.json`.
 
@@ -232,7 +232,8 @@ OpenAI-compatible server (llama.cpp) instead of NVIDIA's API.
   `https://integrate.api.nvidia.com`. The key is read from `.env` (git-ignored) and sent only as a bearer header.
 - Five read-only query tools with closed enums (search takes plain words only); no user-supplied Cypher is ever
   executed. Graph writes happen only through the ingestion code path, from validated facts. Records typed into the
-  UI are labelled simulated: whoever types one chooses its kind, and therefore its authority.
+  UI are simulated, unverified chat; the browser cannot increase their authority.
+- The interactive custom-record form is **untrusted chat only** (authority 35). Browser users cannot label their typed statements as signed change control, an ADR, a directory or a ticket to manufacture evidence. The higher-authority demo updates come from pre-existing synthetic corpus records, not from an arbitrary browser-selected badge. Custom sources use random UUIDs so a server restart cannot overwrite older graph evidence by reusing a counter.
 - Answers are drafts for a human; nothing is approved, sent or executed.
 - Model failure, graph outage, malformed tool calls and vague dates all end in a refusal, never in a guess.
 

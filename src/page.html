@@ -52,8 +52,8 @@ footer{margin-top:22px;color:var(--dim);font-size:13px}
 <div class="card" id="livecard"><h3>Keep it current: add a new record</h3>
 <div class="muted">A new record goes through the same pipeline: Nemotron extracts facts, code checks each quote against the text, and the graph is updated. Then ask again.</div>
 <div class="live" id="live" style="margin-top:12px"></div>
-<div class="muted" style="margin-top:12px">Or type a record yourself (a simulation: you choose its kind, so you choose its authority).</div>
-<div class="custom"><select id="ckind"></select><select id="cauthor"></select><textarea id="ctext" maxlength="1500" placeholder="e.g. Ownership of the search index is assigned to Rosa, effective immediately."></textarea><button id="cgo">Add</button></div>
+<div class="muted" style="margin-top:12px">Or type a simulated, <b>unverified chat</b> record (authority 35). Browser text cannot impersonate a signed change-control, ticket or directory. For authoritative changes, use the predefined demo records above.</div>
+<div class="custom"><span class="badge warn">Unverified chat · 35</span><select id="cauthor"></select><textarea id="ctext" maxlength="1500" placeholder="e.g. Ben says he now owns the billing gateway."></textarea><button id="cgo">Add</button></div>
 <div id="liveout" style="margin-top:12px"></div>
 <div style="margin-top:10px"><button id="reset">Reset graph to the original corpus</button></div>
 </div>
@@ -75,7 +75,7 @@ async function overview(){
  if(!$("#chips").children.length){o.questions.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{$("#q").value=t;ask();};$("#chips").append(b);});
   $("#live").innerHTML=o.live.map(i=>'<div class="liveitem"><div><span class="badge '+(i.kind==="chat"?"warn":"ok")+'">'+esc(i.kind)+' · authority '+esc(o.authority[i.kind])+'</span> <span class="muted">'+esc(i.author)+'</span></div><p>'+esc(i.text.length>180?i.text.slice(0,180)+"…":i.text)+'</p><button data-id="'+esc(i.id)+'">Add to graph</button></div>').join("");
   $("#live").querySelectorAll("button").forEach(b=>b.onclick=()=>live({itemId:b.dataset.id},b));
-  $("#ckind").innerHTML=o.liveKinds.map(k=>'<option value="'+esc(k)+'">'+esc(k)+' ('+esc(o.authority[k])+')</option>').join("");
+  // Browser-entered records are unverified chat. There is no authority selector.
   $("#cauthor").innerHTML=o.people.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join("");
   if(o.offline){$("#cgo").disabled=true;$("#ctext").placeholder="Offline mode: custom records need a model. The three records above replay their cached extraction.";}}
 }
@@ -175,6 +175,6 @@ async function live(body,btn){if(btn)btn.disabled=true;$("#liveout").innerHTML='
   h+=(lastQuestion?'<div style="margin-top:10px"><button id="reask">Ask again: '+esc(lastQuestion)+'</button></div>':"")+'</div>';
   $("#liveout").innerHTML=h;if($("#reask"))$("#reask").onclick=()=>{$("#q").value=lastQuestion;ask();window.scrollTo({top:0,behavior:"smooth"});};overview();}
  catch(e){$("#liveout").textContent=String(e);}finally{if(btn)btn.disabled=false;}}
-$("#cgo").onclick=()=>live({custom:{kind:$("#ckind").value,author:$("#cauthor").value,text:$("#ctext").value}},$("#cgo"));
+$("#cgo").onclick=()=>live({custom:{kind:"chat",author:$("#cauthor").value,text:$("#ctext").value}},$("#cgo"));
 $("#reset").onclick=async()=>{$("#reset").disabled=true;try{await fetch("/api/reset",{method:"POST"});$("#liveout").innerHTML='<div class="muted">Graph rebuilt from the original corpus.</div>';overview();}finally{$("#reset").disabled=false;}};
 </script></body></html>
