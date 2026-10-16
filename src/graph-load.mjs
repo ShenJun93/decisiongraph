@@ -76,7 +76,9 @@ export async function writeSources(graph, sources, factsById, {catalog}) {
       claims.push({id: `${s.id}:${o.serviceId}:${o.ownerId}`, source: s.id, service: o.serviceId, owner: o.ownerId,
         effectiveAt: s.at, quote: o.quote});
     }
-    for (const d of f.decisions || []) decisions.push({...d, source: s.id, at: s.at});
+    for (const d of f.decisions || []) {
+      decisions.push({...d, title: String(d.title).replace(/^ADR-\d{3}\s*[:\-]\s*/i, ""), source: s.id, at: s.at});
+    }
   }
   await graph.query("UNWIND $rows AS r MATCH (src:Source {id:r.source}), (v:Service {id:r.service}), (p:Person {id:r.owner}) " +
     "MERGE (c:OwnershipClaim {id:r.id}) SET c.effectiveAt=r.effectiveAt, c.quote=r.quote " +

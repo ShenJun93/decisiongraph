@@ -57,3 +57,10 @@ test("abstentions must say no owner can be named", () => {
   assert.ok(!explanationAgrees("Aria and Ben both handle payments.", abstain, people));
   assert.match(templateExplanation(abstain), /no owner named/);
 });
+
+test("quoting a low-authority record is allowed; asserting it is not", () => {
+  const lyra = {kind: "owner", services: [{status: "ABSTAIN", serviceId: "search-index", reason: "LOW_AUTHORITY_ONLY", evidence: [{ownerId: "dev"}]}]};
+  const ppl = [{id: "dev", name: "Dev Mehta"}];
+  assert.ok(explanationAgrees('No owner can be named: only chat msg-022 says "Dev owns the search index".', lyra, ppl));
+  assert.ok(!explanationAgrees("No owner can be named, but Dev owns the search index.", lyra, ppl));
+});

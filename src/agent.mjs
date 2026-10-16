@@ -3,7 +3,7 @@
 //  - the tool's subject must be an entity that exists in the graph AND that the question names;
 //  - the point in time comes from a deterministic date parser, never from the model;
 //  - the explanation is kept only if it names nobody outside the evidence and agrees with the result.
-import {entityNames, firstName, mentions} from "./corpus.mjs";
+import {entityNames, firstName, mentions, plain} from "./corpus.mjs";
 import {ownerOfProject, ownerOfService, OWNER_CYPHER, PROJECT_SERVICES_CYPHER} from "./decision.mjs";
 import {DECISION_CHAIN_CYPHER, DECISION_DETAIL_CYPHER, PAGERANK_CYPHER, traceDecision, whoKnows, WHO_KNOWS_CYPHER} from "./knowledge.mjs";
 
@@ -149,7 +149,7 @@ const REFUSAL = /\b(cannot|can't|unable|no owner|not enough|insufficient|abstain
 /** Keep model text only if it names nobody outside the evidence and agrees with the graph's result. */
 export function explanationAgrees(text, r, people) {
   if (typeof text !== "string" || text.trim().length < 10 || text.length > 1200) return false;
-  const t = text.toLowerCase();
+  const t = plain(text).toLowerCase();
   if (APPROVAL.test(t)) return false;
   const evidence = JSON.stringify(r).toLowerCase();
   for (const p of people) {
@@ -164,7 +164,9 @@ export function explanationAgrees(text, r, people) {
     for (const p of people) {
       if (winners.has(p.id)) continue;
       const f = firstName(p.name).toLowerCase();
-      if (new RegExp(`\\b${f}\\b[^.]{0,20}\\b(owns|is the (current )?owner|remains the owner|is responsible)`).test(t)) return false;
+      // Quoting a record ("Dev owns the search index") is fine; asserting it is not.
+      const unquoted = t.replace(/"[^"]{0,300}"/g, '""');
+      if (new RegExp(`\\b${f}\\b[^.]{0,20}\\b(owns|is the (current )?owner|remains the owner|is responsible)`).test(unquoted)) return false;
     }
     if (named.length < (r.services || []).length && !REFUSAL.test(t)) return false;
     return true;
@@ -176,6 +178,19 @@ export function explanationAgrees(text, r, people) {
   }
   return false;
 }
+
+const EXPLAIN_FOCUS = {
+  owner: "Name the owner of each service in the result with the record that supports it. For a service with status " +
+    "ABSTAIN, say clearly that no owner can be named and why. Do not mention services that are not in the result.",
+  expertise: "Say who knows the subject best and why (resolved tickets, documents, comments), citing record ids. " +
+    "If busFactorWarning is true, say the bus factor. Do not discuss ownership.",
+  decision: "Say which decision is current, who decided it and when, what it superseded and which ticket motivated it, " +
+    "citing record ids."
+};
+
+/** Remove citation artefacts such as 【...】 and normalise punctuation before checking or showing model text. */
+export const tidy = s => plain(String(s || "")).replace(/\u3010[^\u3011]{0,200}\u3011/g, "").replace(/\s+([.,;:])/g, "$1")
+  .replace(/[ \t]{2,}/g, " ").trim();
 
 const compact = r => JSON.stringify(r, (k, v) => (k === "text" ? undefined : v)).slice(0, 6000);
 
@@ -204,12 +219,10 @@ export async function askCompanyBrain({model, graph, question, now = new Date()}
   try { e = await loadEntities(graph); } catch { return refuse("GRAPH_UNAVAILABLE"); }
   const tools = agentTools(e);
   const list = (label, xs, f) => `${label}: ` + xs.map(f).join("; ");
-  let reply;
-  try {
-    reply = await model({
-      messages: [
+  const routeMessages = [
         {role: "system", content: "You route questions about Larkspur Systems to its company knowledge graph. " +
-          "If the question asks who owns/is responsible for/should sign off something, who knows something or who to ask, " +
+          "If the question asks who owns/is responsible for/should sign off something (including everything a project " +
+          "depends on), who knows something or who to ask, " +
           "or why something was decided, call exactly ONE tool with the subject the user names. If the user names nothing " +
           "in the lists below, or asks about anything else, do not call a tool; answer in one sentence that you can only " +
           "answer ownership, expertise and decision questions about this company.\n" +
@@ -219,16 +232,26 @@ export async function askCompanyBrain({model, graph, question, now = new Date()}
           list("Decisions", e.decisions, d => `${d.id} = ${d.title}`) + "\n" +
           "Never approve anything, never invent people or sources, never answer from memory."},
         {role: "user", content: question}
-      ],
-      tools, tool_choice: "auto", temperature: 0
-    });
+      ];
+  let reply;
+  try {
+    reply = await model({messages: routeMessages, tools, tool_choice: "auto", temperature: 0, max_tokens: 2048, thinking: false});
   } catch {
     return refuse("MODEL_UNAVAILABLE");
   }
-  const calls = reply?.choices?.[0]?.message?.tool_calls;
+  let calls = reply?.choices?.[0]?.message?.tool_calls;
   if (!Array.isArray(calls) || !calls.length) {
-    trace.push({step: "model_no_tool"});
-    return refuse("OUT_OF_SCOPE");
+    // The model declined a tool. If the question still names something in the graph, ask once more with a
+    // tool required; the grounding check below still applies.
+    const named = [...e.projects, ...e.services, ...e.topics].some(x => mentions(question, entityNames(x))) ||
+      e.decisions.some(d => mentions(question, decisionNames(d)));
+    trace.push({step: "model_no_tool", retry: named});
+    if (!named) return refuse("OUT_OF_SCOPE");
+    try {
+      reply = await model({messages: routeMessages, tools, tool_choice: "required", temperature: 0, max_tokens: 2048, thinking: false});
+      calls = reply?.choices?.[0]?.message?.tool_calls;
+    } catch { return refuse("MODEL_UNAVAILABLE"); }
+    if (!Array.isArray(calls) || !calls.length) return refuse("OUT_OF_SCOPE");
   }
   const call = calls[0];
   const tool = call?.function?.name;
@@ -267,15 +290,14 @@ export async function askCompanyBrain({model, graph, question, now = new Date()}
     const second = await model({
       messages: [
         {role: "system", content: "Explain the graph result below to a busy engineer in at most 3 sentences. Use only " +
-          "the given evidence and cite record ids. If an owner was not named for a service, say clearly that no owner " +
-          "can be named and why. Never say anything is approved."},
+          "the given evidence and cite record ids. Never say anything is approved. " + EXPLAIN_FOCUS[result.kind]},
         {role: "user", content: compact({question, result})}
       ],
-      temperature: 0, max_tokens: 400
+      temperature: 0, max_tokens: 1500, thinking: false
     });
-    const text = second?.choices?.[0]?.message?.content;
-    if (explanationAgrees(text, result, e.people)) { explanation = text.trim(); explanationSource = "model"; }
-    else trace.push({step: "model_explanation_rejected"});
+    const text = tidy(second?.choices?.[0]?.message?.content);
+    if (explanationAgrees(text, result, e.people)) { explanation = text; explanationSource = "model"; }
+    else trace.push({step: "model_explanation_rejected", text: text.slice(0, 400)});
   } catch {
     trace.push({step: "model_explanation_unavailable"});
   }

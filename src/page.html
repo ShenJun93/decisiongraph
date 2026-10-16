@@ -95,15 +95,15 @@ function ownerGraph(services){
  const rows=[];services.forEach(s=>{const ev=s.status==="OWNER"?[s.basis,...(s.outranked||[])]:(s.evidence||s.competing||[]);
   if(!ev.length)rows.push({s,e:null});ev.slice(0,5).forEach(e=>rows.push({s,e}));});
  const H=40,W=1000,h=rows.length*H+30;let out='<svg viewBox="0 0 '+W+' '+h+'" width="100%" role="img" aria-label="Evidence graph">';
- const node=(x,y,t,c,w=200)=>'<rect x="'+x+'" y="'+(y-13)+'" width="'+w+'" height="26" rx="7" fill="#0f1724" stroke="'+c+'"/><text x="'+(x+8)+'" y="'+(y+4)+'" fill="#e6eef9" font-size="12">'+esc(t.length>27?t.slice(0,26)+"…":t)+'</text>';
+ const node=(x,y,t,c,w=200,tip)=>'<g><title>'+esc(tip||t)+'</title><rect x="'+x+'" y="'+(y-13)+'" width="'+w+'" height="26" rx="7" fill="#0f1724" stroke="'+c+'"/><text x="'+(x+8)+'" y="'+(y+4)+'" fill="#e6eef9" font-size="12">'+esc(t.length>27?t.slice(0,26)+"…":t)+'</text></g>';
  const edge=(x1,y1,x2,y2,c,label)=>'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+c+'" stroke-width="2"/>'+(label?'<text x="'+((x1+x2)/2-26)+'" y="'+((y1+y2)/2-5)+'" fill="'+c+'" font-size="10">'+label+'</text>':"");
- out+='<text x="10" y="14" fill="#8ea3bf" font-size="11">SOURCE (authority)</text><text x="300" y="14" fill="#8ea3bf" font-size="11">CLAIM</text><text x="530" y="14" fill="#8ea3bf" font-size="11">SERVICE</text><text x="790" y="14" fill="#8ea3bf" font-size="11">PERSON</text>';
+ out+='<text x="10" y="14" fill="#8ea3bf" font-size="11">SOURCE (kind, authority)</text><text x="300" y="14" fill="#8ea3bf" font-size="11">CLAIM</text><text x="530" y="14" fill="#8ea3bf" font-size="11">SERVICE</text><text x="790" y="14" fill="#8ea3bf" font-size="11">PERSON</text>';
  const svcY={};rows.forEach((r,i)=>{const y=30+i*H+H/2;(svcY[r.s.serviceId]=svcY[r.s.serviceId]||[]).push(y);});
  rows.forEach((r,i)=>{const y=30+i*H+H/2;if(!r.e)return;const win=r.s.status==="OWNER"&&r.e.claimId===r.s.basis.claimId;
   const conflict=r.s.reason==="UNRESOLVED_EQUAL_AUTHORITY_CONFLICT"&&(r.s.competing||[]).some(c=>c.claimId===r.e.claimId);
   const c=win?"#3ecf8e":conflict?"#f5b041":"#3a4f6b";const sy=svcY[r.s.serviceId];const my=(sy[0]+sy[sy.length-1])/2;
   out+=edge(210,y,300,y,c,"ATTESTS")+edge(420,y,530,my,c,"ABOUT")+edge(420,y,790,y,c,"NAMES_OWNER");
-  out+=node(10,y,r.e.sourceId+" ("+r.e.authority+")",c)+node(300,y,day(r.e.effectiveAt),c,120)+node(790,y,first(r.e.ownerName),c,150);});
+  out+=node(10,y,r.e.sourceKind+" "+r.e.authority,c,200,r.e.sourceId)+node(300,y,day(r.e.effectiveAt),c,120)+node(790,y,first(r.e.ownerName),c,150);});
  Object.entries(svcY).forEach(([id,ys])=>{const s=services.find(x=>x.serviceId===id);const c=s.status==="OWNER"?"#3ecf8e":"#f5b041";out+=node(530,(ys[0]+ys[ys.length-1])/2,s.serviceName||id,c,180);});
  return out+'</svg>';}
 
@@ -142,7 +142,7 @@ function render(d){
  let h='';
  h+='<div class="card"><h3>Answer'+(d.time?.matched?' · as of '+esc(day(d.time.asOf))+' (from “'+esc(d.time.matched)+'”)':'')+'</h3><p class="explain">'+esc(d.explanation)+'</p><div class="muted" style="margin-top:8px">'+(d.explanationSource==="model"?"Written by Nemotron, checked against the graph result":"Fixed template (model text missing or disagreed with the graph)")+'</div></div>';
  if(d.kind==="owner")h+=renderOwner(d);else if(d.kind==="expertise")h+=renderExpertise(d);else if(d.kind==="decision")h+=renderDecision(d);
- h+='<div class="card"><h3>What the agent did</h3><ol class="trace">'+(d.trace||[]).map(s=>'<li><b>'+esc(s.step)+'</b> '+esc([s.tool,s.subjectId,s.matched,s.status,s.reason,s.source,s.error].filter(Boolean).join(" · "))+'</li>').join("")+'</ol>'+
+ h+='<div class="card"><h3>What the agent did</h3><ol class="trace">'+(d.trace||[]).map(s=>'<li><b>'+esc(s.step)+'</b> '+esc(s.step==="time"?(s.error?s.error+" (“"+s.matched+"”)":s.matched?"“"+s.matched+"” → as of "+day(s.asOf):"now"):s.step==="model_explanation_rejected"?"guard discarded: “"+(s.text||"").slice(0,160)+"…”":[s.tool,s.subjectId,s.status,s.reason,s.source,s.retry?"retried with a tool required":""].filter(Boolean).join(" · "))+'</li>').join("")+'</ol>'+
   (d.cypher?'<details class="ev"><summary>Cypher it ran</summary><pre>'+esc(d.cypher.join("\n\n"))+'</pre></details>':"")+'</div>';
  $("#out").innerHTML=h;}
 

@@ -114,5 +114,7 @@ export function mentions(text, names) {
   return names.some(n => n && new RegExp(`(^|[^a-z0-9])${escapeRe(n)}($|[^a-z0-9])`).test(t));
 }
 
-export const normalize = s => String(s || "").replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
-  .replace(/[–—]/g, "-").replace(/\s+/g, " ").trim().toLowerCase();
+/** Same punctuation for model text and records: curly quotes, the many Unicode hyphens/dashes, odd spaces. */
+export const plain = s => String(s || "").replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+  .replace(/[‐-―−]/g, "-").replace(/[  ]/g, " ");
+export const normalize = s => plain(s).replace(/\s+/g, " ").trim().toLowerCase();

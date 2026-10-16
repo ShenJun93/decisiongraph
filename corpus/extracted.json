@@ -1,7 +1,7 @@
 {
  "model": "nvidia/nemotron-3-super-120b-a12b",
- "extractedAt": "2026-10-16T13:27:05.199Z",
- "seconds": 46,
+ "extractedAt": "2026-10-16T13:41:17.049Z",
+ "seconds": 25,
  "totals": {
   "sources": 140,
   "ownership": 17,
@@ -22,7 +22,7 @@
       "event-bus"
      ],
      "supersedes": null,
-     "quote": "- Decided by: Vik"
+     "quote": "The ledger service will publish one `LedgerEntryPosted` event per committed entry to the `ledger-events` topic on the event bus."
     }
    ],
    "rejected": []
@@ -38,7 +38,7 @@
       "feature-store"
      ],
      "supersedes": null,
-     "quote": "- Decided by: Jun"
+     "quote": "The online layer of the feature store moves to Redis (cluster mode, three shards with one replica each)."
     }
    ],
    "rejected": []
@@ -55,7 +55,7 @@
       "checkout-web"
      ],
      "supersedes": null,
-     "quote": "- Decided by: Uma"
+     "quote": "Card data is tokenized at the edge of payments-api."
     }
    ],
    "rejected": []
@@ -65,13 +65,13 @@
    "decisions": [
     {
      "decisionId": "ADR-012",
-     "title": "ADR-012: Replace Kafka publishing for ledger events with a Postgres transactional outbox",
+     "title": "Replace Kafka publishing for ledger events with a Postgres transactional outbox",
      "decidedBy": "omar",
      "serviceIds": [
       "ledger-service"
      ],
      "supersedes": "ADR-007",
-     "quote": "- Decided by: Omar"
+     "quote": "The ledger service writes each ledger entry and its outgoing event row into an `outbox` table in the same Postgres transaction."
     }
    ],
    "rejected": []

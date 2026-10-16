@@ -40,7 +40,7 @@ export function extractionTool(catalog, org) {
                 decidedBy: {type: "string", enum: people},
                 serviceIds: {type: "array", items: {type: "string", enum: services}},
                 supersedes: {type: ["string", "null"], description: "ADR-nnn this decision replaces, or null"},
-                quote: {type: "string", description: "Exact sentence from the record naming the decision or decider"}
+                quote: {type: "string", description: "Exact sentence from the record that states what was decided"}
               },
               required: ["decisionId", "title", "decidedBy", "serviceIds", "supersedes", "quote"], additionalProperties: false
             }

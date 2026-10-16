@@ -20,14 +20,15 @@ export function hostedModelConfig(env = process.env) {
 
 export function createHostedModel(config = hostedModelConfig(), fetchImpl = fetch) {
   const {endpoint, apiKey, model} = validateHostedModelConfig(config);
-  return async ({messages, tools, tool_choice, temperature = 0, max_tokens = 512}) => {
+  return async ({messages, tools, tool_choice, temperature = 0, max_tokens = 512, thinking}) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 90000);
     try {
       const res = await fetchImpl(endpoint, {
         method: "POST",
         headers: {"content-type": "application/json", authorization: `Bearer ${apiKey}`},
-        body: JSON.stringify({model, messages, tools, tool_choice, temperature, max_tokens: Math.min(Number(max_tokens) || 512, 4096)}),
+        body: JSON.stringify({model, messages, tools, tool_choice, temperature, max_tokens: Math.min(Number(max_tokens) || 512, 4096),
+          ...(thinking === false ? {chat_template_kwargs: {enable_thinking: false}} : {})}),
         signal: controller.signal
       });
       // Status only: response bodies of failed calls can echo request details.
