@@ -27,7 +27,7 @@ All data is synthetic (a fictional company, Larkspur Systems). Nothing is approv
 
 ## Demo
 
-- Video: _link added at submission_
+- Video (2:48): https://youtu.be/8SpDo1HTdso
 - Run it locally in about 5 minutes (below). UI: http://127.0.0.1:18737 · FalkorDB Browser: http://127.0.0.1:13000
 
 | Ask | Answer from the graph |
